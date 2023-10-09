@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Webcam Stream</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="video_container">
+        <div class="webcam_container">
+        <img id="webcam_stream" height="300">
+        </div>
+
+        <div class="dance_video_container" >
+        <video id="dance_video" autoplay loop height="710">
+            <source src="{{ url_for('static', filename='dance.mp4') }}" type="video/mp4">
+        </video>
+        </div>
+        <div class="close-range-indicator" id="indicator"></div>
+    </div>
+    <script>
+        const imgElement = document.getElementById('webcam_stream');
+        const streamUrl = '/webcam_stream';
+        imgElement.src = streamUrl;
+
+        function getRandomChoice() {
+    // Generate a random number between 0 and 2
+    const randomNum = Math.floor(Math.random() * 3);
+
+    // Map the random number to the choices
+    switch (randomNum) {
+        case 0:
+            return 'good';
+        case 1:
+            return 'bad';
+        case 2:
+            return 'excellent';
+    }
+}
+
+
+        function updateIndicator(moveQuality) {
+            if (moveQuality === 'good') {
+                indicator.style.backgroundColor = 'green';
+            } else if (moveQuality === 'excellent') {
+                indicator.style.backgroundColor = '#02f74c';
+            } else if (moveQuality === 'bad') {
+                indicator.style.backgroundColor = 'red';
+            } else {
+                indicator.style.backgroundColor = 'transparent'; // Default
+            }
+
+            // Trigger the fade-out effect
+            indicator.style.opacity = 1;
+            setTimeout(() => {
+                indicator.style.opacity = 0;
+            }, 1000); // Adjust the delay (in milliseconds) as needed
+        }
+
+        // Example: Update the indicator for a "good" move and trigger the fade-out effect
+        setInterval(() => {
+            const randomMoveQuality = getRandomChoice();
+    updateIndicator(randomMoveQuality); // Example: Update with 'good' move quality
+}, 3000);
+
+    </script>
+</body>
+</html>
