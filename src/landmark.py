@@ -1,6 +1,7 @@
 import numpy as np
 
-class Landmark:
+
+class Landmark3D:
     def __init__(self, id, x, y, z) -> None:
         self._id = id
         self._x = x
@@ -24,13 +25,13 @@ class Landmark:
         return self._z
 
 
-class RawLandmark(Landmark):
+class RawLandmark3D(Landmark3D):
     def __init__(self, id, x, y, z) -> None:
         super().__init__(id, x, y, z)
 
 
-class SkeletonLandmark(Landmark):
-    def __init__(self, raw_landmark: RawLandmark, parent_raw_landmark: RawLandmark,
+class SkeletonLandmark3D(Landmark3D):
+    def __init__(self, raw_landmark: RawLandmark3D, parent_raw_landmark: RawLandmark3D,
                  parent_normalized_landmark, normalized_distance) -> None:
 
         x1 = parent_raw_landmark.x
@@ -63,7 +64,7 @@ class SkeletonLandmark(Landmark):
         return self._distance
 
 
-class AnchorSkeletonLandmark(SkeletonLandmark):
+class AnchorSkeletonLandmark3D(SkeletonLandmark3D):
     def __init__(self) -> None:
         self._x = 0
         self._y = 0

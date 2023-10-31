@@ -34,7 +34,10 @@ def plot_data_from_skeleton():
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d")
 
-    data = get_pose_data_from_video("src/d.mp4")
+    data = get_pose_data_from_video("src/test (1).mp4")
     ani = animation.FuncAnimation(fig, update_plot, len(data), fargs=([ax, data]), interval=17)
 
     plt.show()
+
+
+plot_data_from_skeleton()
