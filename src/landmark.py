@@ -72,3 +72,23 @@ class AnchorSkeletonLandmark3D(SkeletonLandmark3D):
         self._id = -1
         self._parent_landmark = None
         self._distance = 0
+
+class Landmark2D(Landmark3D):
+    def __init__(self, id, x, y) -> None:
+        super().__init__(id, x, y, 0)
+
+
+class RawLandmark2D(Landmark2D):
+    def __init__(self, id, x, y) -> None:
+        super().__init__(id, x, y)
+
+
+class SkeletonLandmark2D(SkeletonLandmark3D):
+    def __init__(self, raw_landmark: RawLandmark2D, parent_raw_landmark: RawLandmark2D,
+                 parent_normalized_landmark, normalized_distance) -> None:
+        super().__init__(raw_landmark, parent_raw_landmark, parent_normalized_landmark, normalized_distance)
+
+
+class AnchorSkeletonLandmark2D(AnchorSkeletonLandmark3D):
+    def __init__(self) -> None:
+        super().__init__()

@@ -2,7 +2,7 @@ import cv2
 import mediapipe as mp
 import time
 from constants import LEFT_ANCHOR_CREATOR_NODE, RIGHT_ANCHOR_CREATOR_NODE
-from skeleton import Skeleton
+from skeleton import Skeleton3D, Skeleton2D
 
 mpPose = mp.solutions.pose
 pose = mpPose.Pose()
@@ -52,14 +52,13 @@ def get_data_for_plot_display():
             data.append(current_frame_data)
 
 
-def get_pose_data_from_video(video_path):
+def get_3d_pose_data_from_video(video_path):
 
     data = []
 
     mpPose = mp.solutions.pose
     pose = mpPose.Pose()
     cap = cv2.VideoCapture(video_path)
-    # cap = cv2.VideoCapture('src/c.mp4')
     while True:
         success, img = cap.read()
         if not success:
@@ -76,6 +75,31 @@ def get_pose_data_from_video(video_path):
             anchor_landmark_y = (left_anchor[2] + right_anchor[2]) / 2
             anchor_landmark_z = (left_anchor[3] + right_anchor[3]) / 2
             current_frame_data.append([-1, anchor_landmark_x, anchor_landmark_y, anchor_landmark_z])
-            # current_frame_data.insert(0, [-1, anchor_landmark_x, anchor_landmark_y, anchor_landmark_z])
-            frame_skeleton = Skeleton("src/skeleton.csv", current_frame_data)
+            frame_skeleton = Skeleton3D("src/skeleton.csv", current_frame_data)
+            data.append(frame_skeleton)
+
+
+def get_2d_pose_data_from_video(video_path):
+
+    data = []
+
+    mpPose = mp.solutions.pose
+    pose = mpPose.Pose()
+    cap = cv2.VideoCapture(video_path)
+    while True:
+        success, img = cap.read()
+        if not success:
+            return data
+        imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        results = pose.process(imgRGB)
+        if results.pose_landmarks:
+            current_frame_data = []
+            for id, lm in enumerate(results.pose_landmarks.landmark):
+                current_frame_data.append([id, lm.x, lm.y])
+            left_anchor = current_frame_data[LEFT_ANCHOR_CREATOR_NODE]
+            right_anchor = current_frame_data[RIGHT_ANCHOR_CREATOR_NODE]
+            anchor_landmark_x = (left_anchor[1] + right_anchor[1]) / 2
+            anchor_landmark_y = (left_anchor[2] + right_anchor[2]) / 2
+            current_frame_data.append([-1, anchor_landmark_x, anchor_landmark_y])
+            frame_skeleton = Skeleton2D("src/skeleton.csv", current_frame_data)
             data.append(frame_skeleton)
