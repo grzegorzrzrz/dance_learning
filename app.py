@@ -24,6 +24,10 @@ def generate_frames():
 def index():
     return render_template('index.html')
 
+@app.route('/menu')
+def menu():
+    return render_template('menu.html')
+
 @app.route('/dance')
 def dance_page():
     return render_template('dance.html')

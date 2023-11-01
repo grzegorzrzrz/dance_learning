@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dance Learning Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(30deg, #b193be, #630975);
+            background-size: 400% 400%;
+            animation: gradientAnimation 6s linear infinite;
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 100% 0%;
+            }
+            50% {
+                background-position: 0% 100%;
+            }
+            100% {
+                background-position: 100% 0%;
+            }
+        }
+
+        .title {
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .miniature-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .miniature {
+            margin: 0 20px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            position: relative;
+        }
+
+        .miniature:hover {
+            transform: scale(1.1);
+        }
+
+        .miniature img {
+            max-width: 100%;
+        }
+
+        .miniature video {
+            max-width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+        }
+
+        .miniature:hover video {
+            display: block;
+        }
+
+        .miniature-title {
+            font-size: 16px;
+            color: #fff;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">
+        <h1>Choose the dance!</h1>
+    </div>
+    <div class="miniature-container">
+        <a href="dance"> <!-- Link to another webpage -->
+            <div class="miniature" onmouseover="startVideo('video1');" onmouseout="stopVideo('video1')">
+                <video id="video1" width="320">
+                    <source src="{{ url_for('static', filename='dance.mp4') }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <img src="{{ url_for('static', filename='dance_preview.png') }}" width="320" alt="Dance 1">
+                <p class="miniature-title">Feel Special - TWICE</p>
+            </div>
+        </a>
+
+        <a href="#" onclick="startApplication(); return false;">
+            <div class="miniature">
+                <video width="320" height="240" controls onmouseover="resetVideo(this)">
+                    <source src="dance_video_2.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <img src="dance_image_2.jpg" alt="Dance 2">
+                <p class="miniature-title">Dance 2</p>
+            </div>
+        </a>
+        <!-- Add more dance miniatures as needed -->
+    </div>
+
+    <script>
+        function startApplication() {
+            window.location.href = '/menu';
+        }
+
+        function resetVideo(video) {
+            video.currentTime = 0;
+        }
+
+        function startVideo(id) {
+            const video = document.getElementById(id);
+            video.currentTime = 0;
+            video.play();
+        }
+
+        function stopVideo(id) {
+            const video = document.getElementById(id);
+            video.pause();
+        }
+    </script>
+</body>
+</html>

@@ -1,14 +1,109 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dance Learning Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(30deg, #b193be, #630975);
+            background-size: 400% 400%;
+            animation: gradientAnimation 6s linear infinite;
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 100% 0%;
+            }
+            50% {
+                background-position: 0% 100%;
+            }
+            100% {
+                background-position: 100% 0%;
+            }
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #fff;
+            color: #630975;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .button:hover {
+            transform: scale(1.1);
+        }
+
+        /* Style for the fullscreen button */
+        #fullscreen-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: transparent; /* Transparent background */
+            border: none;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <div class="button" onclick="redirectToStream()">
-        Start
+    <div class="container">
+        <h1>Welcome to the Dance Learning Application!</h1>
+        <button class="button" onclick="startApplication()">Start Learning</button>
     </div>
+
+    <!-- Fullscreen button with local SVG images -->
+    <button id="fullscreen-button" onclick="toggleFullscreen()">
+        <img id="fullscreen-icon" src="{{ url_for('static', filename='on-fullscreen.svg') }}" alt="Fullscreen" style="width: 500px;">
+    </button>
+
     <script>
-        function redirectToStream() {
-            window.location.href = '/dance';
+        let isFullscreen = false;
+
+        function startApplication() {
+            window.location.href = '/menu';
+        }
+
+        function toggleFullscreen() {
+            const doc = window.document;
+            const docEl = doc.documentElement;
+
+            if (docEl.requestFullscreen) {
+                if (!isFullscreen) {
+                    docEl.requestFullscreen();
+                    isFullscreen = true;
+                    document.getElementById('fullscreen-icon').src = "{{ url_for('static', filename='off-fullscreen.svg') }}";
+                } else {
+                    doc.exitFullscreen();
+                    isFullscreen = false;
+                    document.getElementById('fullscreen-icon').src = "{{ url_for('static', filename='on-fullscreen.svg') }}";
+                }
+            }
         }
     </script>
 </body>
