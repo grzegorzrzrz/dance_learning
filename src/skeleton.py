@@ -21,6 +21,8 @@ class Skeleton3D:
                 new_landmark = SkeletonLandmark3D(raw_child, raw_parent, norm_parent, distance)
                 self._landmarks.append(new_landmark)
 
+        self._landmarks.sort(key=lambda x: x.id)
+
 
     def landmarks(self):
         return self._landmarks

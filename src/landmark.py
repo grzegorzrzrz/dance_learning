@@ -1,4 +1,5 @@
 import numpy as np
+from constants import NODES_NAME
 
 
 class Landmark3D:
@@ -7,6 +8,7 @@ class Landmark3D:
         self._x = x
         self._y = y
         self._z = z
+        self._name = NODES_NAME[id]
 
     @property
     def id(self):
@@ -23,6 +25,10 @@ class Landmark3D:
     @property
     def z(self):
         return self._z
+
+    @property
+    def name(self):
+        return self._name
 
 
 class RawLandmark3D(Landmark3D):
