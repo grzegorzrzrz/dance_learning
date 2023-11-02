@@ -1,8 +1,8 @@
 import cv2
 import mediapipe as mp
 import time
-from constants import LEFT_ANCHOR_CREATOR_NODE, RIGHT_ANCHOR_CREATOR_NODE
-from skeleton import Skeleton3D, Skeleton2D
+from constants import LEFT_ANCHOR_CREATOR_NODE, RIGHT_ANCHOR_CREATOR_NODE, N_RAW_NODES
+from skeleton import Skeleton3D
 
 mpPose = mp.solutions.pose
 pose = mpPose.Pose()
@@ -52,54 +52,42 @@ def get_data_for_plot_display():
             data.append(current_frame_data)
 
 
-def get_3d_pose_data_from_video(video_path):
+def get_pose_data_from_video(video_path, dimension = "3D"):
 
     data = []
 
     mpPose = mp.solutions.pose
     pose = mpPose.Pose()
     cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    current_frame = 0
     while True:
         success, img = cap.read()
         if not success:
             return data
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         results = pose.process(imgRGB)
+        timestamp = current_frame / fps
         if results.pose_landmarks:
             current_frame_data = []
             for id, lm in enumerate(results.pose_landmarks.landmark):
                 current_frame_data.append([id, lm.x, lm.y, lm.z])
             left_anchor = current_frame_data[LEFT_ANCHOR_CREATOR_NODE]
             right_anchor = current_frame_data[RIGHT_ANCHOR_CREATOR_NODE]
+
             anchor_landmark_x = (left_anchor[1] + right_anchor[1]) / 2
             anchor_landmark_y = (left_anchor[2] + right_anchor[2]) / 2
-            anchor_landmark_z = (left_anchor[3] + right_anchor[3]) / 2
+
+            if dimension == "3D":
+                anchor_landmark_z = (left_anchor[3] + right_anchor[3]) / 2
+            elif dimension == "2D":
+                anchor_landmark_z = 0
+
             current_frame_data.append([-1, anchor_landmark_x, anchor_landmark_y, anchor_landmark_z])
-            frame_skeleton = Skeleton3D("src/skeleton.csv", current_frame_data)
+            frame_skeleton = Skeleton3D("src/skeleton.csv", current_frame_data, timestamp)
             data.append(frame_skeleton)
-
-
-def get_2d_pose_data_from_video(video_path):
-
-    data = []
-
-    mpPose = mp.solutions.pose
-    pose = mpPose.Pose()
-    cap = cv2.VideoCapture(video_path)
-    while True:
-        success, img = cap.read()
-        if not success:
-            return data
-        imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        results = pose.process(imgRGB)
-        if results.pose_landmarks:
-            current_frame_data = []
-            for id, lm in enumerate(results.pose_landmarks.landmark):
-                current_frame_data.append([id, lm.x, lm.y])
-            left_anchor = current_frame_data[LEFT_ANCHOR_CREATOR_NODE]
-            right_anchor = current_frame_data[RIGHT_ANCHOR_CREATOR_NODE]
-            anchor_landmark_x = (left_anchor[1] + right_anchor[1]) / 2
-            anchor_landmark_y = (left_anchor[2] + right_anchor[2]) / 2
-            current_frame_data.append([-1, anchor_landmark_x, anchor_landmark_y])
-            frame_skeleton = Skeleton2D("src/skeleton.csv", current_frame_data)
-            data.append(frame_skeleton)
+        else:
+            empty_landmarks = [[None, None, None] for _ in range(N_RAW_NODES)]
+            empty_skeleton = Skeleton3D("src/skeleton.csv", empty_landmarks)
+            data.append(empty_skeleton)
+        current_frame += 1

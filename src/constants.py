@@ -40,3 +40,4 @@ NODES_NAME = {
 
 }
 
+N_RAW_NODES = len(NODES_NAME)

@@ -2,14 +2,15 @@ import csv
 from landmark import *
 
 class Skeleton3D:
-    def __init__(self, skeleton_data_file, raw_landmarks_data) -> None:
+    def __init__(self, skeleton_data_file, raw_landmarks_data, timestamp) -> None:
         self._raw_landmarks = []
         for raw_landmark_data in raw_landmarks_data:
             id, x, y, z = raw_landmark_data
-            new_landmark = RawLandmark3D(id, x, y, z)
+            new_landmark = RawLandmark(id, x, y, z)
             self._raw_landmarks.append(new_landmark)
+        self._timestamp = timestamp
 
-        anchor = AnchorSkeletonLandmark3D()
+        anchor = AnchorSkeletonLandmark()
         self._landmarks = [anchor]
         with open(skeleton_data_file) as handle:
             csv_reader = csv.DictReader(handle, delimiter=",")
@@ -18,7 +19,7 @@ class Skeleton3D:
                 raw_parent   = self.get_raw_landmark_by_id(int(row["parent"]))
                 norm_parent  = self.get_landmark_by_id(int(row["parent"]))
                 distance     = float(row["distance"])
-                new_landmark = SkeletonLandmark3D(raw_child, raw_parent, norm_parent, distance)
+                new_landmark = SkeletonLandmark(raw_child, raw_parent, norm_parent, distance)
                 self._landmarks.append(new_landmark)
 
         self._landmarks.sort(key=lambda x: x.id)
@@ -41,23 +42,6 @@ class Skeleton3D:
             if landmark.id == id:
                 return landmark
 
-
-class Skeleton2D(Skeleton3D):
-    def __init__(self, skeleton_data_file, raw_landmarks_data) -> None:
-        self._raw_landmarks = []
-        for raw_landmark_data in raw_landmarks_data:
-            id, x, y = raw_landmark_data
-            new_landmark = RawLandmark2D(id, x, y)
-            self._raw_landmarks.append(new_landmark)
-
-        anchor = AnchorSkeletonLandmark2D()
-        self._landmarks = [anchor]
-        with open(skeleton_data_file) as handle:
-            csv_reader = csv.DictReader(handle, delimiter=",")
-            for row in csv_reader:
-                raw_child    = self.get_raw_landmark_by_id(int(row["child"]))
-                raw_parent   = self.get_raw_landmark_by_id(int(row["parent"]))
-                norm_parent  = self.get_landmark_by_id(int(row["parent"]))
-                distance     = float(row["distance"])
-                new_landmark = SkeletonLandmark2D(raw_child, raw_parent, norm_parent, distance)
-                self._landmarks.append(new_landmark)
+    @property
+    def timestamp(self):
+        return self._timestamp
