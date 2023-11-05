@@ -7,36 +7,46 @@
 <body>
     <div class="video_container">
         <div class="webcam_container">
-        <img id="webcam_stream" height="300">
+            <img id="webcam_stream" height="300">
         </div>
 
-        <div class="dance_video_container" >
-        <video id="dance_video" autoplay loop height="710">
-            <source src="{{ url_for('static', filename='dance.mp4') }}" type="video/mp4">
-        </video>
+        <div class="dance_video_container">
+            <video id="dance_video" autoplay height="710">
+                <source src="{{ url_for('static', filename='dance.mp4') }}" type="video/mp4">
+            </video>
         </div>
         <div class="close-range-indicator" id="indicator"></div>
     </div>
+
+    <div class="finishing-screen" id="finishing-screen" style="display: none;
+    flex-direction: column; justify-content: center; align-items: center; height: 100vh;">
+        <h2 style="color:white; text-align: center;">Results</h2>
+        <div class="piechart" style="text-align: center;"></div>
+        <h2 style="color:green; text-align: center;">Number of Good Moves: <span id="good-moves">0</span></h2>
+        <h2 style="color:#02f74c; text-align: center;">Number of Excellent Moves: <span id="excellent-moves">0</span></h2>
+        <h2 style="color:red; text-align: center;">Number of Bad Moves: <span id="bad-moves">0</span></h2>
+    </div>
+
+
     <script>
         const imgElement = document.getElementById('webcam_stream');
         const streamUrl = '/webcam_stream';
         imgElement.src = streamUrl;
 
         function getRandomChoice() {
-    // Generate a random number between 0 and 2
-    const randomNum = Math.floor(Math.random() * 3);
+            // Generate a random number between 0 and 2
+            const randomNum = Math.floor(Math.random() * 3);
 
-    // Map the random number to the choices
-    switch (randomNum) {
-        case 0:
-            return 'good';
-        case 1:
-            return 'bad';
-        case 2:
-            return 'excellent';
-    }
-}
-
+            // Map the random number to the choices
+            switch (randomNum) {
+                case 0:
+                    return 'good';
+                case 1:
+                    return 'bad';
+                case 2:
+                    return 'excellent';
+            }
+        }
 
         function updateIndicator(moveQuality) {
             if (moveQuality === 'good') {
@@ -56,12 +66,51 @@
             }, 1000); // Adjust the delay (in milliseconds) as needed
         }
 
-        // Example: Update the indicator for a "good" move and trigger the fade-out effect
-        setInterval(() => {
-            const randomMoveQuality = getRandomChoice();
-    updateIndicator(randomMoveQuality); // Example: Update with 'good' move quality
-}, 3000);
+        // Initialize move counters
+        let goodMoves = 0;
+        let excellentMoves = 0;
+        let badMoves = 0;
 
+        // Example: Update the indicator and move counters
+        let interval = setInterval(() => {
+            const randomMoveQuality = getRandomChoice();
+            updateIndicator(randomMoveQuality); // Example: Update with 'good' move quality
+
+            // Update move counters
+            if (randomMoveQuality === 'good') {
+                goodMoves++;
+            } else if (randomMoveQuality === 'excellent') {
+                excellentMoves++;
+            } else if (randomMoveQuality === 'bad') {
+                badMoves++;
+            }
+        }, 3000);
+
+        // Detect when the video ends and show the finishing screen
+        const videoElement = document.getElementById('dance_video');
+        videoElement.addEventListener('ended', () => {
+            // Hide the video and show the finishing screen
+            videoElement.style.display = 'none';
+            const finishingScreen = document.getElementById('finishing-screen');
+            let totalMoves = goodMoves + excellentMoves + badMoves;
+            let goodDeg = (goodMoves / totalMoves) * 360;
+            let excellentDeg = (excellentMoves / totalMoves) * 360;
+            let badDeg = (badMoves / totalMoves) * 360;
+            document.querySelector('.piechart').style.backgroundImage = `conic-gradient(
+                green ${goodDeg}deg,
+                #02f74c 0 ${excellentDeg}deg,
+                red 0
+                )`;
+            finishingScreen.style.display = 'flex';
+            imgElement.style.display = "none";
+            clearInterval(interval);
+
+
+            // Display move statistics
+            document.getElementById('good-moves').textContent = goodMoves;
+            document.getElementById('excellent-moves').textContent = excellentMoves;
+            document.getElementById('bad-moves').textContent = badMoves;
+        });
     </script>
 </body>
 </html>

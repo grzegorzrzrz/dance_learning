@@ -36,3 +36,10 @@ body {
         opacity: 0; /* Initially invisible */
         transition: opacity 1s ease; /* Add a fade-out transition */
 }
+
+        .piechart {
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+
+        }

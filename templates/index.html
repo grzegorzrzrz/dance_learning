@@ -76,34 +76,11 @@
         <h1>Welcome to the Dance Learning Application!</h1>
         <button class="button" onclick="startApplication()">Start Learning</button>
     </div>
-
-    <!-- Fullscreen button with local SVG images -->
-    <button id="fullscreen-button" onclick="toggleFullscreen()">
-        <img id="fullscreen-icon" src="{{ url_for('static', filename='on-fullscreen.svg') }}" alt="Fullscreen" style="width: 500px;">
-    </button>
-
     <script>
         let isFullscreen = false;
 
         function startApplication() {
             window.location.href = '/menu';
-        }
-
-        function toggleFullscreen() {
-            const doc = window.document;
-            const docEl = doc.documentElement;
-
-            if (docEl.requestFullscreen) {
-                if (!isFullscreen) {
-                    docEl.requestFullscreen();
-                    isFullscreen = true;
-                    document.getElementById('fullscreen-icon').src = "{{ url_for('static', filename='off-fullscreen.svg') }}";
-                } else {
-                    doc.exitFullscreen();
-                    isFullscreen = false;
-                    document.getElementById('fullscreen-icon').src = "{{ url_for('static', filename='on-fullscreen.svg') }}";
-                }
-            }
         }
     </script>
 </body>
