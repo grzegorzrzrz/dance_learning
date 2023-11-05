@@ -30,10 +30,18 @@ class Landmark:
     def name(self):
         return self._name
 
+    def __bool__(self):
+        return bool(self.x and self.y and self.z)
+
 
 class RawLandmark(Landmark):
     def __init__(self, id, x, y, z) -> None:
         super().__init__(id, x, y, z)
+
+
+class EmptyLandmark(Landmark):
+    def __init__(self, id) -> None:
+        super().__init__(id, None, None, None)
 
 
 class SkeletonLandmark(Landmark):

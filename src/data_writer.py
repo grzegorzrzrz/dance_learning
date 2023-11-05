@@ -5,7 +5,7 @@ from constants import NODES_NAME
 
 from pose_estimation import *
 
-def write_data_to_csv_file(skeleton_list: List[Skeleton3D], path: str, skeleton_file="src/skeleton.csv"):
+def write_data_to_csv_file(skeleton_list: List[RawSkeleton], path: str, skeleton_file="src/skeleton.csv"):
 
     with open(skeleton_file, "r") as handle:
         csv_reader = csv.DictReader(handle, delimiter=",")
@@ -33,5 +33,5 @@ def write_data_to_csv_file(skeleton_list: List[Skeleton3D], path: str, skeleton_
         for row in data_to_write:
             writer.writerow(row)
 
-test = get_pose_data_from_video("src/test (1).mp4", "2D")
-write_data_to_csv_file(test, "src/temp.csv")
+# test = get_pose_data_from_video("src/test (1).mp4", "2D")
+# write_data_to_csv_file(test, "src/temp.csv")
