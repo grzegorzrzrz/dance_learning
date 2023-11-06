@@ -32,6 +32,10 @@ class DanceManager:
         self._dance_video_path = dance_video_path
         self._pattern_dance = pattern_dance
         self._actual_dance = Dance([])
+        self._dance_displayer_thread = threading.Thread(target=self._TEMP_show_dance_pattern)
+        self._dance_data_getter_thread = threading.Thread(target=self._get_dance_data_from_camera)
+        self._displayer_timestamp = 0
+        self._is_video_being_played = False
 
     @property
     def pattern_dance(self):
@@ -45,52 +49,66 @@ class DanceManager:
     def dance_video_path(self):
         return self._dance_video_path
 
+    @property
+    def dance_displayer_thread(self):
+        return self._dance_displayer_thread
+
+    @property
+    def dance_data_getter_thread(self):
+        return self._dance_data_getter_thread
+
+    @property
+    def displayer_timestamp(self):
+        return self._displayer_timestamp
+
+    @property
+    def is_video_being_played(self):
+        return self._is_video_being_played
+
     def compare_dances(self):
+        self._is_video_being_played = True
+        self._dance_data_getter_thread.start()
 
-        input_dance =  threading.Thread(target=self._TEMP_show_dance_pattern)
-        output_dance = threading.Thread(target=self._get_dance_data_from_camera)
-
-        input_dance.start()
-        output_dance.start()
-
-        while True:
+        while self._is_video_being_played:
             self._compare_recent_dance()
 
 
     def _TEMP_show_dance_pattern(self):
         cap = cv2.VideoCapture(self._dance_video_path)
-        sTime = time.time()
+
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        frame_time = int(1000/fps)
+        current_frame = 0
         while True:
             success, img = cap.read()
 
-            cTime = time.time()
-            vTime = cTime - sTime
-
+            self._displayer_timestamp = current_frame / fps
             if success:
-                cv2.putText(img, str(round(vTime, 4)), (50,50), cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0), 3)
+                cv2.putText(img, str(round(self.displayer_timestamp, 4)), (50,50), cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0), 3)
 
             else:
+                #Video is finished
+                self._is_video_being_played = False
                 break
 
             cv2.imshow("Image", img)
-            cv2.waitKey(1)
+            cv2.waitKey(frame_time)
+            current_frame += 1
 
 
 
     def _get_dance_data_from_camera(self):
         cap = cv2.VideoCapture(0)
-        sTime = time.time()
-
-        while True:
+        self._dance_displayer_thread.start()
+        while self._is_video_being_played:
             ret, frame = cap.read()
             imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             result = estaminate_from_frame(imgRGB)
-            cTime = time.time()
-            vTime = cTime - sTime
-            skeleton = create_skeleton_from_raw_pose_landmarks(result.pose_landmarks, vTime, "2D")
+            skeleton = create_skeleton_from_raw_pose_landmarks(result.pose_landmarks, self.displayer_timestamp, "2D")
             self.actual_dance.add_skeleton(skeleton)
 
             if not ret:
+                #Something wrong is with camera
                 break
 
     def _compare_recent_dance(self):
@@ -103,7 +121,13 @@ class DanceManager:
             landmark_id = lm.id
             patt_lm = pattern_frame.get_landmark_by_id(landmark_id)
             error = 0
-            if lm and patt_lm:
+            if not lm:
+                #Camera could not find a person
+                pass
+            elif not patt_lm:
+                #Person could not be found in reference video
+                pass
+            else:
                 landmark_error = math.sqrt((lm.x - patt_lm.x)**2 + (lm.y - patt_lm.y)**2 + (lm.z - patt_lm.z)**2)
                 error += landmark_error
 
@@ -145,3 +169,6 @@ def dance(data_path, dance_path):
     dance = create_dance_from_data_file(data_path)
     dance_manager = DanceManager(dance_path, dance)
     dance_manager.compare_dances()
+
+if __name__ == "__main__":
+    dance("src/temp.csv", "src/test (1).mp4")
