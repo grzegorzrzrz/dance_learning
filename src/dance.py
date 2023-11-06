@@ -67,12 +67,15 @@ class DanceManager:
             vTime = cTime - sTime
 
             if success:
-                cv2.putText(img, str(int(vTime)), (50,50), cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0), 3)
-                cv2.imshow("Image", img)
-                cv2.waitKey(1)
+                cv2.putText(img, str(round(vTime, 4)), (50,50), cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0), 3)
 
             else:
                 break
+
+            cv2.imshow("Image", img)
+            cv2.waitKey(1)
+
+
 
     def _get_dance_data_from_camera(self):
         cap = cv2.VideoCapture(0)
@@ -142,6 +145,3 @@ def dance(data_path, dance_path):
     dance = create_dance_from_data_file(data_path)
     dance_manager = DanceManager(dance_path, dance)
     dance_manager.compare_dances()
-
-if __name__ == "__main__":
-    dance("src/temp.csv", "src/test (1).mp4")

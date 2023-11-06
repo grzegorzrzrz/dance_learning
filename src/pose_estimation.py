@@ -31,7 +31,7 @@ def create_skeleton_from_raw_pose_landmarks(pose_landmarks, timestamp, dimension
         frame_skeleton = RawSkeleton("src/skeleton.csv", current_frame_data, timestamp)
 
     else:
-        rame_skeleton = EmptySkeleton("src/skeleton.csv", timestamp)
+        frame_skeleton = EmptySkeleton("src/skeleton.csv", timestamp)
 
     return frame_skeleton
 

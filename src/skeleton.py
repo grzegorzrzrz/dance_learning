@@ -9,7 +9,7 @@ class Skeleton:
         self._timestamp = timestamp
         for landmark_data in landmarks_data:
             id, x, y, z = landmark_data
-            self._landmarks.append(Landmark(id, x, y, z))
+            self._landmarks.append(Landmark(id, float(x), float(y), float(z)))
 
     def landmarks(self):
         return self._landmarks
@@ -35,7 +35,7 @@ class RawSkeleton(Skeleton):
         self._raw_landmarks = []
         for raw_landmark_data in raw_landmarks_data:
             id, x, y, z = raw_landmark_data
-            new_landmark = RawLandmark(id, x, y, z)
+            new_landmark = RawLandmark(id, float(x), float(y), float(z))
             self._raw_landmarks.append(new_landmark)
         self._timestamp = timestamp
 
