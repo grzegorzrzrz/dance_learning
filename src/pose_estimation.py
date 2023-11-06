@@ -60,26 +60,6 @@ def show_video_with_estimation(path):
         cv2.waitKey(1)
 
 
-def get_pose_data_from_video(video_path, dimension = "3D"):
-
-    data = []
-
-    mpPose = mp.solutions.pose
-    pose = mpPose.Pose()
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    current_frame = 0
-    while True:
-        success, img = cap.read()
-        if not success:
-            return data
-        imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        results = pose.process(imgRGB)
-        timestamp = current_frame / fps
-        create_skeleton_from_raw_pose_landmarks(results.pose_landmarks, timestamp, dimension)
-        current_frame += 1
-
-
 def get_pose_data_from_single_frame():
 
     cap = cv2.VideoCapture(0)

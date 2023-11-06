@@ -2,11 +2,8 @@ from skeleton import *
 import csv
 from typing import List
 from constants import NODES_NAME, SKELETON_FILE
-from dance import Dance
 
-from pose_estimation import *
-
-def write_data_to_csv_file(dance_data: Dance, path: str, skeleton_file=SKELETON_FILE):
+def write_data_to_csv_file(dance_data, path: str, skeleton_file=SKELETON_FILE):
 
     with open(skeleton_file, "r") as handle:
         csv_reader = csv.DictReader(handle, delimiter=",")
@@ -28,11 +25,8 @@ def write_data_to_csv_file(dance_data: Dance, path: str, skeleton_file=SKELETON_
             current_skeleton_data += [landmark.x, landmark.y, landmark.z]
         data_to_write.append(current_skeleton_data)
 
-    with open(path, "w") as handle:
+    with open(path, "w", newline='') as handle:
         writer = csv.writer(handle, delimiter=',')
 
         for row in data_to_write:
             writer.writerow(row)
-
-# test = get_pose_data_from_video("src/test (1).mp4", "2D")
-# write_data_to_csv_file(test, "src/temp.csv")

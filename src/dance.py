@@ -167,10 +167,32 @@ def create_dance_from_data_file(data_file):
             skeleton_list.append(Skeleton(current_raw_skeleton, timestamp))
     return Dance(skeleton_list)
 
+
+def get_dance_data_from_video(video_path, dimension = "3D"):
+
+    data = []
+
+    cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    current_frame = 0
+    while True:
+        success, img = cap.read()
+        if not success:
+            return Dance(data)
+        imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        results = estaminate_from_frame(imgRGB)
+        timestamp = current_frame / fps
+        skeleton = create_skeleton_from_raw_pose_landmarks(results.pose_landmarks, timestamp, dimension)
+        data.append(skeleton)
+        current_frame += 1
+
 def dance(data_path, dance_path):
     dance = create_dance_from_data_file(data_path)
     dance_manager = DanceManager(dance_path, dance)
     dance_manager.compare_dances()
+    dance_manager.save_actual_dance("src/atemp.csv")
 
 if __name__ == "__main__":
+    test = get_dance_data_from_video("src/test (1).mp4", "2D")
+    write_data_to_csv_file(test, "src/temp.csv")
     dance("src/temp.csv", "src/test (1).mp4")
