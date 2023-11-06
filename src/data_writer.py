@@ -1,11 +1,12 @@
 from skeleton import *
 import csv
 from typing import List
-from constants import NODES_NAME
+from constants import NODES_NAME, SKELETON_FILE
+from dance import Dance
 
 from pose_estimation import *
 
-def write_data_to_csv_file(skeleton_list: List[RawSkeleton], path: str, skeleton_file="src/skeleton.csv"):
+def write_data_to_csv_file(dance_data: Dance, path: str, skeleton_file=SKELETON_FILE):
 
     with open(skeleton_file, "r") as handle:
         csv_reader = csv.DictReader(handle, delimiter=",")
@@ -20,7 +21,7 @@ def write_data_to_csv_file(skeleton_list: List[RawSkeleton], path: str, skeleton
         csv_file_names.append(f"{node}_z")
 
     data_to_write = [csv_file_names]
-    for skeleton in skeleton_list:
+    for skeleton in dance_data.skeleton_table:
         timestamp = skeleton.timestamp
         current_skeleton_data = [timestamp]
         for landmark in skeleton.landmarks()[1:]:

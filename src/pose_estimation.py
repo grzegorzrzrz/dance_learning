@@ -1,7 +1,7 @@
 import cv2
 import mediapipe as mp
 import time
-from constants import LEFT_ANCHOR_CREATOR_NODE, RIGHT_ANCHOR_CREATOR_NODE, N_RAW_NODES, NODES_NAME
+from constants import LEFT_ANCHOR_CREATOR_NODE, RIGHT_ANCHOR_CREATOR_NODE, SKELETON_FILE
 from skeleton import *
 
 mpPose = mp.solutions.pose
@@ -28,10 +28,10 @@ def create_skeleton_from_raw_pose_landmarks(pose_landmarks, timestamp, dimension
             anchor_landmark_z = 0
 
         current_frame_data.append([-1, anchor_landmark_x, anchor_landmark_y, anchor_landmark_z])
-        frame_skeleton = RawSkeleton("src/skeleton.csv", current_frame_data, timestamp)
+        frame_skeleton = RawSkeleton(SKELETON_FILE, current_frame_data, timestamp)
 
     else:
-        frame_skeleton = EmptySkeleton("src/skeleton.csv", timestamp)
+        frame_skeleton = EmptySkeleton(SKELETON_FILE, timestamp)
 
     return frame_skeleton
 
@@ -83,7 +83,6 @@ def get_pose_data_from_video(video_path, dimension = "3D"):
 def get_pose_data_from_single_frame():
 
     cap = cv2.VideoCapture(0)
-
 
     success, img = cap.read()
     imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)

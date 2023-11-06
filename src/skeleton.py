@@ -1,5 +1,6 @@
 import csv
 from landmark import *
+from math import isclose
 
 
 class Skeleton:
@@ -26,8 +27,19 @@ class Skeleton:
     def timestamp(self):
         return self._timestamp
 
-    def __lt__(self, other):
-        return self.timestamp < other.timestamp
+    def __lt__(self, __value: object) -> bool:
+        return self.timestamp < __value.timestamp
+
+    def __eq__(self, __value: object) -> bool:
+        for landmark in self.landmarks():
+            check_id = landmark.id
+            other_lm = __value.get_landmark_by_id(check_id)
+            if not other_lm:
+                return False
+            if landmark != other_lm:
+                return False
+        return isclose(self.timestamp, __value.timestamp)
+
 
 
 class RawSkeleton(Skeleton):

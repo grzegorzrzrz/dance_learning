@@ -1,5 +1,6 @@
 import numpy as np
 from constants import NODES_NAME
+from math import isclose
 
 
 class Landmark:
@@ -32,6 +33,9 @@ class Landmark:
 
     def __bool__(self):
         return bool(self.x and self.y and self.z)
+
+    def __eq__(self, __value: object) -> bool:
+        return self.id == __value.id and isclose(self.x, __value.x) and isclose(self.y, __value.y) and isclose(self.z, __value.z)
 
 
 class RawLandmark(Landmark):

@@ -1,10 +1,10 @@
 from skeleton import Skeleton
 from typing import List
 from pose_estimation import estaminate_from_frame, create_skeleton_from_raw_pose_landmarks, reverse_dictionary
-from constants import NODES_NAME
+from data_writer import write_data_to_csv_file
+from constants import NODES_NAME, SKELETON_FILE
 import cv2
 import csv
-import time
 import threading
 import math
 
@@ -20,8 +20,9 @@ class Dance:
         return min(self._skeleton_table, key= lambda x: abs(x.timestamp-timestamp))
 
     def add_skeleton(self, skeleton: Skeleton):
-        self._skeleton_table.append(skeleton)
-        self._skeleton_table.sort()
+        if skeleton not in self.skeleton_table:
+            self._skeleton_table.append(skeleton)
+            self._skeleton_table.sort()
 
     def get_last_skeleton(self):
         return self._skeleton_table[-1] if self._skeleton_table else None
@@ -72,6 +73,8 @@ class DanceManager:
         while self._is_video_being_played:
             self._compare_recent_dance()
 
+    def save_actual_dance(self, file_name):
+        write_data_to_csv_file(self.actual_dance, file_name, SKELETON_FILE)
 
     def _TEMP_show_dance_pattern(self):
         cap = cv2.VideoCapture(self._dance_video_path)
@@ -96,7 +99,6 @@ class DanceManager:
             current_frame += 1
 
 
-
     def _get_dance_data_from_camera(self):
         cap = cv2.VideoCapture(0)
         self._dance_displayer_thread.start()
@@ -108,7 +110,7 @@ class DanceManager:
             self.actual_dance.add_skeleton(skeleton)
 
             if not ret:
-                #Something wrong is with camera
+                #Something is wrong with camera
                 break
 
     def _compare_recent_dance(self):
