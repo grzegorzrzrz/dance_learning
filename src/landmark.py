@@ -32,7 +32,7 @@ class Landmark:
         return self._name
 
     def __bool__(self):
-        return bool(self.x and self.y and self.z)
+        return bool(self.x is not None and self.y is not None and self.z is not None)
 
     def __eq__(self, __value: object) -> bool:
         return self.id == __value.id and isclose(self.x, __value.x) and isclose(self.y, __value.y) and isclose(self.z, __value.z)

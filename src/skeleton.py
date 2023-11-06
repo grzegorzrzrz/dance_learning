@@ -10,7 +10,10 @@ class Skeleton:
         self._timestamp = timestamp
         for landmark_data in landmarks_data:
             id, x, y, z = landmark_data
-            self._landmarks.append(Landmark(id, float(x), float(y), float(z)))
+            if x and y and z:
+                self._landmarks.append(Landmark(id, float(x), float(y), float(z)))
+            else:
+                self._landmarks.append(EmptyLandmark(id))
 
     def landmarks(self):
         return self._landmarks
