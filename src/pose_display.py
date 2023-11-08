@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from matplotlib.widgets import Slider
 from pose_estimation import *
+import numpy as np
 from dance import get_dance_data_from_video, create_dance_from_data_file, Dance
 
 
@@ -58,6 +60,75 @@ def plot_data_from_2d_skeleton(dance_file):
 
     plt.show()
 
+def plot_data_from_2d_skeleton(dance_file):
+    fig, ax = plt.subplots()
+
+    skeleton = create_dance_from_data_file(dance_file)
+    data = skeleton.skeleton_table
+    ani = animation.FuncAnimation(fig, update_2d_plot, len(data), fargs=([ax, data]), interval=17)
+
+    plt.show()
+
+def plot_ineractive_double_dance_2d(pattern_dance_path, actual_dance_path):
+
+    def get_data_to_plot(dance: Dance, timestamp):
+        x_data = []
+        y_data = []
+        id_data = []
+        skeleton = dance.get_skeleton_by_timestamp(timestamp)
+        for landmark in skeleton.landmarks():
+            if landmark:
+                x_data.append(landmark.x)
+                y_data.append(-landmark.y)
+                id_data.append(landmark.id)
+            else:
+                x_data.append(0)
+                y_data.append(0)
+                id_data.append("X")
+
+        return x_data, y_data, id_data
+
+    fig, ax = plt.subplots(figsize=(5,10))
+    ax.set_xlim(-2, 2)
+    ax.set_ylim(-4.5, 4.5)
+    axtime = fig.add_axes([0.25, 0.93, 0.65, 0.03])
+    pattern_dance = create_dance_from_data_file(pattern_dance_path)
+    actual_dance = create_dance_from_data_file(actual_dance_path)
+    max_time = pattern_dance.get_last_skeleton().timestamp
+
+    time_slider = Slider(axtime, label="timestamp",
+                         valmin=0, valmax=max_time, valinit=0)
+
+    patt_x, patt_y, patt_id = get_data_to_plot(pattern_dance, 0)
+    act_x, act_y, act_id = get_data_to_plot(actual_dance, 0)
+    patt_texts = []
+    act_texts = []
+    for i in range(len(patt_x)):
+        patt_texts.append(ax.text(patt_x[i], patt_y[i], patt_id[i], c="b"))
+        act_texts.append(ax.text(act_x[i], act_y[i], act_id[i], c="r"))
+
+    ax.set_title(f"Time: 0")
+
+    def update(val):
+        timestamp = time_slider.val
+        patt_x, patt_y, patt_id = get_data_to_plot(pattern_dance, timestamp)
+        act_x, act_y, act_id = get_data_to_plot(actual_dance, timestamp)
+        for i in range(len(patt_x)):
+            patt_texts[i].set_x(patt_x[i])
+            patt_texts[i].set_y(patt_y[i])
+            patt_texts[i].set_text(patt_id[i])
+            act_texts[i].set_x(act_x[i])
+            act_texts[i].set_y(act_y[i])
+            act_texts[i].set_text(act_id[i])
+
+        ax.set_title(f"Time: {timestamp}")
+
+        fig.canvas.draw_idle()
+
+    time_slider.on_changed(update)
+
+    plt.show()
+
 def compare_dances_from_file(pattern_dance_path, actual_dance_path):
     fig, ax = plt.subplots()
     pattern_dance = create_dance_from_data_file(pattern_dance_path)
@@ -66,5 +137,3 @@ def compare_dances_from_file(pattern_dance_path, actual_dance_path):
                                   len(pattern_dance.skeleton_table), fargs=([ax, pattern_dance, actual_dance]), interval=17)
 
     plt.show()
-
-compare_dances_from_file("src/temp.csv", "src/atemp.csv")
