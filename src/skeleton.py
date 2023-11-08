@@ -1,11 +1,10 @@
 import csv
 from landmark import *
 from math import isclose
-from typing import List
 
 
 class Skeleton:
-    def __init__(self, landmarks_data: List[int, float, float, float], timestamp: float) -> None:
+    def __init__(self, landmarks_data, timestamp: float) -> None:
         """A class for containg data about pose estimation from single image.
         This class is a container for Landmarks got from pose.
 
@@ -26,7 +25,7 @@ class Skeleton:
             else:
                 self._landmarks.append(EmptyLandmark(id))
 
-    def landmarks(self) -> List[Landmark]:
+    def landmarks(self):
         """Returns a list of Landmarks of this Skeleton.
         """
         return self._landmarks
@@ -62,7 +61,7 @@ class Skeleton:
 
 class RawSkeleton(Skeleton):
 
-    def __init__(self, skeleton_data_file: str, raw_landmarks_data:List[int, float, float, float], timestamp: float) -> None:
+    def __init__(self, skeleton_data_file: str, raw_landmarks_data, timestamp: float) -> None:
         """A type of Skeleton, which is suitable for creating pose directly form image pose estimator.
         This class gets a data rquried to created list of Landmarks, as normal Skeleon class, but it also normalizes
         distances of these Landmarks based on skeleton_data_file.
@@ -95,7 +94,7 @@ class RawSkeleton(Skeleton):
         self._landmarks.sort(key=lambda x: x.id)
 
 
-    def raw_landmarks(self) -> List[RawLandmark]:
+    def raw_landmarks(self):
         """Returns a list of RawLandmarks which have data taken directly from image.
         """
         return self._raw_landmarks
