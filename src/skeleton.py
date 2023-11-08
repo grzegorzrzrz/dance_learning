@@ -1,10 +1,21 @@
 import csv
 from landmark import *
 from math import isclose
+from typing import List
 
 
 class Skeleton:
-    def __init__(self, landmarks_data, timestamp) -> None:
+    def __init__(self, landmarks_data: List[int, float, float, float], timestamp: float) -> None:
+        """A class for containg data about pose estimation from single image.
+        This class is a container for Landmarks got from pose.
+
+        Args:
+            landmarks_data (List[int, float, float, float]): A list of containers, which have 4 elements
+            describing single Landmark: its id and x, y and z coordnates. From this list. This data must be already normalized,
+            and it should not be taken directly from image pose estimation.
+            a list of Landmarks will be created.
+            timestamp (float): A number, describing in which second there was a pose, which is described by this class.
+        """
         anchor = AnchorSkeletonLandmark()
         self._landmarks = [anchor]
         self._timestamp = timestamp
@@ -15,10 +26,14 @@ class Skeleton:
             else:
                 self._landmarks.append(EmptyLandmark(id))
 
-    def landmarks(self):
+    def landmarks(self) -> List[Landmark]:
+        """Returns a list of Landmarks of this Skeleton.
+        """
         return self._landmarks
 
-    def get_landmark_by_id(self, id):
+    def get_landmark_by_id(self, id) -> Landmark:
+        """Returns one of Landmarks of this Skeleton, which has the given id.
+        """
         return self._get_landmark_by_id(self.landmarks(), id)
 
     def _get_landmark_by_id(self, landmark_list, id):
@@ -46,7 +61,18 @@ class Skeleton:
 
 
 class RawSkeleton(Skeleton):
-    def __init__(self, skeleton_data_file, raw_landmarks_data, timestamp) -> None:
+
+    def __init__(self, skeleton_data_file: str, raw_landmarks_data:List[int, float, float, float], timestamp: float) -> None:
+        """A type of Skeleton, which is suitable for creating pose directly form image pose estimator.
+        This class gets a data rquried to created list of Landmarks, as normal Skeleon class, but it also normalizes
+        distances of these Landmarks based on skeleton_data_file.
+
+        Args:
+            skeleton_data_file (str): Path to csv file, which contain data about how to build a skeleton.
+            raw_landmarks_data (List[int, float, float, float]): A list of containers, which have 4 elements
+            describing single Landmark: its id and x, y and z coordnates. From this list.
+            timestamp (float): A number, describing in which second there was a pose, which is described by this class.
+        """
         self._raw_landmarks = []
         for raw_landmark_data in raw_landmarks_data:
             id, x, y, z = raw_landmark_data
@@ -69,15 +95,28 @@ class RawSkeleton(Skeleton):
         self._landmarks.sort(key=lambda x: x.id)
 
 
-    def raw_landmarks(self):
+    def raw_landmarks(self) -> List[RawLandmark]:
+        """Returns a list of RawLandmarks which have data taken directly from image.
+        """
         return self._raw_landmarks
 
-    def get_raw_landmark_by_id(self, id):
+    def get_raw_landmark_by_id(self, id) -> RawLandmark:
+        """Returns one of RawLandmarks of this Skeleton, which has the given id.
+        """
         return self._get_landmark_by_id(self.raw_landmarks(), id)
 
 
 class EmptySkeleton(Skeleton):
-    def __init__(self, skeleton_data_file, timestamp) -> None:
+
+    def __init__(self, skeleton_data_file: str, timestamp: float) -> None:
+        """Class, which is used when human pose could not be estimated correctly from image.
+        This class is a placeholder for Dance class, so that there will be information that there wasn't
+        detected pose on given time.
+
+        Args:
+            skeleton_data_file (_type_):  Path to csv file, which contain data about how to build a skeleton.
+            timestamp (float): A number, describing in which second pose has not been detected.
+        """
         self._timestamp = timestamp
 
         anchor = EmptyLandmark(-1)
