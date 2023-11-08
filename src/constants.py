@@ -43,3 +43,4 @@ NODES_NAME = {
 N_RAW_NODES = len(NODES_NAME)
 
 SKELETON_FILE = "src/skeleton.csv"
+DEFAULT_PROJECTION = "2D"

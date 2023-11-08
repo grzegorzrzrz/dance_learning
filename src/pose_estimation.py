@@ -1,7 +1,7 @@
 import cv2
 import mediapipe as mp
 import time
-from constants import LEFT_ANCHOR_CREATOR_NODE, RIGHT_ANCHOR_CREATOR_NODE, SKELETON_FILE
+from constants import LEFT_ANCHOR_CREATOR_NODE, RIGHT_ANCHOR_CREATOR_NODE, SKELETON_FILE, DEFAULT_PROJECTION
 from skeleton import *
 
 mpPose = mp.solutions.pose
@@ -11,7 +11,7 @@ mpDraw = mp.solutions.drawing_utils
 def estaminate_from_frame(frame):
     return pose.process(frame)
 
-def create_skeleton_from_raw_pose_landmarks(pose_landmarks, timestamp, dimension="3D") -> RawSkeleton:
+def create_skeleton_from_raw_pose_landmarks(pose_landmarks, timestamp, dimension=DEFAULT_PROJECTION) -> RawSkeleton:
     if pose_landmarks:
         current_frame_data = []
         for id, lm in enumerate(pose_landmarks.landmark):

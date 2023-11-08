@@ -2,7 +2,7 @@ from skeleton import Skeleton
 from typing import List
 from pose_estimation import estaminate_from_frame, create_skeleton_from_raw_pose_landmarks, reverse_dictionary
 from data_writer import write_data_to_csv_file
-from constants import NODES_NAME, SKELETON_FILE
+from constants import NODES_NAME, SKELETON_FILE, DEFAULT_PROJECTION
 import cv2
 import csv
 import threading
@@ -24,7 +24,7 @@ class Dance:
             self._skeleton_table.append(skeleton)
             self._skeleton_table.sort()
 
-    def get_last_skeleton(self):
+    def get_last_skeleton(self) -> Skeleton:
         return self._skeleton_table[-1] if self._skeleton_table else None
 
 
@@ -99,14 +99,14 @@ class DanceManager:
             current_frame += 1
 
 
-    def _get_dance_data_from_camera(self):
+    def _get_dance_data_from_camera(self, dimension = DEFAULT_PROJECTION):
         cap = cv2.VideoCapture(0)
         self._dance_displayer_thread.start()
         while self._is_video_being_played:
             ret, frame = cap.read()
             imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             result = estaminate_from_frame(imgRGB)
-            skeleton = create_skeleton_from_raw_pose_landmarks(result.pose_landmarks, self.displayer_timestamp, "2D")
+            skeleton = create_skeleton_from_raw_pose_landmarks(result.pose_landmarks, self.displayer_timestamp, dimension)
             self.actual_dance.add_skeleton(skeleton)
 
             if not ret:
@@ -168,7 +168,7 @@ def create_dance_from_data_file(data_file):
     return Dance(skeleton_list)
 
 
-def get_dance_data_from_video(video_path, dimension = "3D"):
+def get_dance_data_from_video(video_path, dimension = DEFAULT_PROJECTION):
 
     data = []
 
@@ -193,6 +193,6 @@ def dance(data_path, dance_path):
     dance_manager.save_actual_dance("src/atemp.csv")
 
 if __name__ == "__main__":
-    test = get_dance_data_from_video("src/test (1).mp4", "2D")
+    test = get_dance_data_from_video("src/test (1).mp4")
     write_data_to_csv_file(test, "src/temp.csv")
     dance("src/temp.csv", "src/test (1).mp4")

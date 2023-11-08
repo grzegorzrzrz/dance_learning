@@ -3,7 +3,7 @@ import matplotlib.animation as animation
 from matplotlib.widgets import Slider
 from pose_estimation import *
 import numpy as np
-from dance import get_dance_data_from_video, create_dance_from_data_file, Dance
+from dance import create_dance_from_data_file, Dance
 
 
 
