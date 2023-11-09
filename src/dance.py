@@ -157,7 +157,7 @@ class DanceManager:
             ret, frame = cap.read()
             imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             result = estaminate_from_frame(imgRGB)
-            skeleton = create_skeleton_from_raw_pose_landmarks(result.pose_landmarks, self.displayer_timestamp, dimension)
+            skeleton = create_skeleton_from_raw_pose_landmarks(result.pose_world_landmarks, self.displayer_timestamp, dimension)
             self.actual_dance.add_skeleton(skeleton)
 
             if not ret:
@@ -235,7 +235,7 @@ def get_dance_data_from_video(video_path, dimension = DEFAULT_PROJECTION):
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         results = estaminate_from_frame(imgRGB)
         timestamp = current_frame / fps
-        skeleton = create_skeleton_from_raw_pose_landmarks(results.pose_landmarks, timestamp, dimension)
+        skeleton = create_skeleton_from_raw_pose_landmarks(results.pose_world_landmarks, timestamp, dimension)
         data.append(skeleton)
         current_frame += 1
 

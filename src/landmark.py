@@ -49,8 +49,9 @@ class Landmark:
         return bool(self.x is not None and self.y is not None and self.z is not None)
 
     def __eq__(self, __value: object) -> bool:
+        if not self or not __value:
+            return self.id == __value.id
         return self.id == __value.id and isclose(self.x, __value.x) and isclose(self.y, __value.y) and isclose(self.z, __value.z)
-
 
 class RawLandmark(Landmark):
     def __init__(self, id: int, x: float, y: float, z:float) -> None:

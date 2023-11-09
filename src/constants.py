@@ -1,6 +1,6 @@
 LEFT_ANCHOR_CREATOR_NODE = 23
 RIGHT_ANCHOR_CREATOR_NODE = 24
-
+MODEL_PATH = "src/pose_landmarker_heavy.task"
 NODES_NAME = {
 
     -1: "anchor",

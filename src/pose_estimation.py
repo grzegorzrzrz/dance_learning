@@ -1,20 +1,31 @@
 import cv2
 import mediapipe as mp
 import time
-from constants import LEFT_ANCHOR_CREATOR_NODE, RIGHT_ANCHOR_CREATOR_NODE, SKELETON_FILE, DEFAULT_PROJECTION
+from constants import LEFT_ANCHOR_CREATOR_NODE, RIGHT_ANCHOR_CREATOR_NODE, SKELETON_FILE, DEFAULT_PROJECTION, MODEL_PATH
 from skeleton import *
 
-mpPose = mp.solutions.pose
-pose = mpPose.Pose()
+
+BaseOptions = mp.tasks.BaseOptions
+PoseLandmarker = mp.tasks.vision.PoseLandmarker
+PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
+VisionRunningMode = mp.tasks.vision.RunningMode
+
+options = PoseLandmarkerOptions(
+    base_options=BaseOptions(model_asset_path=MODEL_PATH),
+    running_mode=VisionRunningMode.IMAGE)
+
+landmarker = PoseLandmarker.create_from_options(options)
+
 mpDraw = mp.solutions.drawing_utils
 
 def estaminate_from_frame(frame):
-    return pose.process(frame)
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
+    return landmarker.detect(mp_image)
 
 def create_skeleton_from_raw_pose_landmarks(pose_landmarks, timestamp, dimension=DEFAULT_PROJECTION) -> RawSkeleton:
     if pose_landmarks:
         current_frame_data = []
-        for id, lm in enumerate(pose_landmarks.landmark):
+        for id, lm in enumerate(pose_landmarks[0]):
             current_frame_data.append([id, lm.x, lm.y, lm.z])
         left_anchor = current_frame_data[LEFT_ANCHOR_CREATOR_NODE]
         right_anchor = current_frame_data[RIGHT_ANCHOR_CREATOR_NODE]
@@ -41,10 +52,10 @@ def show_video_with_estimation(path):
     while True:
         success, img = cap.read()
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        results = pose.process(imgRGB)
+        results = landmarker.detect(imgRGB)
         print(results.pose_landmarks)
         if results.pose_landmarks:
-            mpDraw.draw_landmarks(img, results.pose_landmarks, mpPose.POSE_CONNECTIONS)
+            # mpDraw.draw_landmarks(img, results.pose_landmarks, mpPose.POSE_CONNECTIONS)
             for id, lm in enumerate(results.pose_landmarks.landmark):
                 h, w,c = img.shape
                 print(id, lm)
@@ -63,19 +74,19 @@ def show_video_with_estimation(path):
 def get_pose_data_from_single_frame():
 
     cap = cv2.VideoCapture(0)
-
-    success, img = cap.read()
-    imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    results = pose.process(imgRGB)
-    print(results.pose_landmarks)
-    if results.pose_landmarks:
-        mpDraw.draw_landmarks(img, results.pose_landmarks, mpPose.POSE_CONNECTIONS)
-        for id, lm in enumerate(results.pose_landmarks.landmark):
-            h, w,c = img.shape
-            print(id, lm)
-            cx, cy = int(lm.x*w), int(lm.y*h)
-            cv2.circle(img, (cx, cy), 5, (255,0,0), cv2.FILLED)
-
+    while True:
+        success, img = cap.read()
+        imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        results = estaminate_from_frame(imgRGB)
+        print(results.pose_world_landmarks)
+        if results.pose_world_landmarks:
+            # mpDraw.draw_landmarks(img, results.pose_landmarks, mpPose.POSE_CONNECTIONS)
+            for id, lm in enumerate(results.pose_world_landmarks[0]):
+                h, w,c = img.shape
+                print(id, lm)
+                cx, cy = int(lm.x*w), int(lm.y*h)
+                cv2.circle(img, (cx, cy), 5, (255,0,0), cv2.FILLED)
+        cv2.imshow("Test", imgRGB)
     ret, frame = cap.read()
 
     cap.release()
