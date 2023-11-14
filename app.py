@@ -1,6 +1,6 @@
-from flask import Flask, Response, render_template
+from flask import Flask, Response, render_template, request, jsonify, stream_with_context
 import cv2
-
+import random, time
 app = Flask(__name__)
 
 video_capture = cv2.VideoCapture(0)  # 0 for default camera (you can specify other camera indexes or video files)
@@ -31,6 +31,26 @@ def menu():
 @app.route('/dance')
 def dance_page():
     return render_template('dance.html')
+
+@app.route('/video_message', methods=['POST'])
+def video_started():
+    data = request.get_json()
+    message = data.get('message', 'No message received')
+    print(f"Received message from the client: {message}")
+    # Perform any additional actions you need here
+    return jsonify(success=True)
+
+def generate_messages():
+    while True:
+        # Send the current message to the client
+        yield f"data: {random.choice(['good', 'bad', 'excellent'])}\n\n"
+        time.sleep(5)
+        # Sleep for 5 seconds
+
+@app.route('/point_stream')
+def stream():
+    # Use the SSE MIME type
+    return Response(generate_messages(), content_type='text/event-stream')
 
 @app.route('/webcam_stream')
 def video_feed():

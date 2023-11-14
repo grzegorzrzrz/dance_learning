@@ -32,29 +32,50 @@
         const imgElement = document.getElementById('webcam_stream');
         const streamUrl = '/webcam_stream';
         imgElement.src = streamUrl;
+        const eventSource = new EventSource('/point_stream');
 
-        function getRandomChoice() {
-            // Generate a random number between 0 and 2
-            const randomNum = Math.floor(Math.random() * 3);
 
-            // Map the random number to the choices
-            switch (randomNum) {
-                case 0:
-                    return 'good';
-                case 1:
-                    return 'bad';
-                case 2:
-                    return 'excellent';
-            }
-        }
+        let goodMoves = 0;
+        let excellentMoves = 0;
+        let badMoves = 0;
+
+        eventSource.onmessage = function(event) {
+        // Update the message on the HTML page
+        console.log(event.data);
+        updateIndicator(event.data);
+    };
+
+        eventSource.onerror = function(event) {
+        // Handle errors
+        console.error("Error with SSE:", event);
+        eventSource.close();
+    };
+
+
+
+        const videoElement = document.getElementById('dance_video');
+        videoElement.addEventListener('play', function() {
+
+        // When the video starts playing, send a request to the Flask server
+        fetch('/video_message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: '!VIDEO_START' }),
+        });
+    });
 
         function updateIndicator(moveQuality) {
             if (moveQuality === 'good') {
+                goodMoves++;
                 indicator.style.backgroundColor = 'green';
             } else if (moveQuality === 'excellent') {
+                excellentMoves++;
                 indicator.style.backgroundColor = '#02f74c';
             } else if (moveQuality === 'bad') {
                 indicator.style.backgroundColor = 'red';
+                badMoves++;
             } else {
                 indicator.style.backgroundColor = 'transparent'; // Default
             }
@@ -66,29 +87,15 @@
             }, 1000); // Adjust the delay (in milliseconds) as needed
         }
 
-        // Initialize move counters
-        let goodMoves = 0;
-        let excellentMoves = 0;
-        let badMoves = 0;
-
-        // Example: Update the indicator and move counters
-        let interval = setInterval(() => {
-            const randomMoveQuality = getRandomChoice();
-            updateIndicator(randomMoveQuality); // Example: Update with 'good' move quality
-
-            // Update move counters
-            if (randomMoveQuality === 'good') {
-                goodMoves++;
-            } else if (randomMoveQuality === 'excellent') {
-                excellentMoves++;
-            } else if (randomMoveQuality === 'bad') {
-                badMoves++;
-            }
-        }, 3000);
-
         // Detect when the video ends and show the finishing screen
-        const videoElement = document.getElementById('dance_video');
         videoElement.addEventListener('ended', () => {
+            fetch('/video_message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: '!VIDEO_END' }),
+        });
             // Hide the video and show the finishing screen
             videoElement.style.display = 'none';
             const finishingScreen = document.getElementById('finishing-screen');
@@ -103,7 +110,6 @@
                 )`;
             finishingScreen.style.display = 'flex';
             imgElement.style.display = "none";
-            clearInterval(interval);
 
 
             // Display move statistics
