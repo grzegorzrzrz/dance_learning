@@ -8,6 +8,8 @@ import csv
 import threading
 import math
 
+import time #@TODO Remove after testing
+
 class Dance:
     def __init__(self, skeleton_table: List[Skeleton], name="") -> None:
         """A class which represents a dance, as a list of Skeletons created in time.
@@ -239,13 +241,30 @@ def get_dance_data_from_video(video_path, dimension = DEFAULT_PROJECTION):
         data.append(skeleton)
         current_frame += 1
 
-def dance(data_path, dance_path):
-    dance = create_dance_from_data_file(data_path)
-    dance_manager = DanceManager(dance_path, dance)
-    dance_manager.compare_dances()
-    dance_manager.save_actual_dance("src/atemp.csv")
+class MockDanceManage(DanceManager):
+    def __init__(self, pattern_dance: str, actual_dance: Dance) -> None:
+        """Mock testing class for DanceManager.
 
-if __name__ == "__main__":
-    test = get_dance_data_from_video("src/test (1).mp4")
-    write_data_to_csv_file(test, "src/temp.csv")
-    dance("src/temp.csv", "src/test (1).mp4")
+        Args:
+            pattern_dance (Dance): A Dance class object, which mocks data from video.
+            actual_dance (Dance): A Dance class object, which mocks data from camera.
+        """
+
+        self._dance_video_path = None
+        self._pattern_dance = pattern_dance
+        self._actual_dance = actual_dance
+        self._dance_displayer_thread = None
+        self._dance_data_getter_thread = None
+        self._displayer_timestamp = 0
+        self._is_video_being_played = False
+
+    def compare_dances(self):
+        self._is_video_being_played = True
+        time_start = time.time()
+        dance_time = self.pattern_dance.get_last_skeleton().timestamp
+
+        while self._is_video_being_played:
+            self._compare_recent_dance()
+            self._displayer_timestamp = time.time() - time_start
+            if self._displayer_timestamp > dance_time:
+                self._is_video_being_played = False
