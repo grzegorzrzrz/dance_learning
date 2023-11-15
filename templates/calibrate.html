@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dance learning</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        #camera_prompt {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="camera_prompt">Please ensure your entire body is visible in the camera frame</div>
+    <div id="webcam_container">
+        <img id="webcam_stream">
+    </div>
+    <script>
+        const imgElement = document.getElementById('webcam_stream');
+        const streamUrl = '/webcam_stream';
+        imgElement.src = streamUrl;
+        setTimeout(() => {
+            window.location.href = 'dance';
+        }, 5000);
+    </script>
+</body>
+</html>

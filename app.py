@@ -37,6 +37,10 @@ def menu():
 def dance_page():
     return render_template('dance.html')
 
+@app.route('/calibrate')
+def calibrate_page():
+    return render_template('calibrate.html')
+
 @app.route('/video_message', methods=['POST'])
 def video_started():
     data = request.get_json()
@@ -51,7 +55,7 @@ def video_started():
     return jsonify(success=True)
 
 def generate_messages():
-    while True:
+    for _ in range (7):
         # Send the current message to the client
         yield f"data: {random.choice(['good', 'bad', 'excellent'])}\n\n"
         time.sleep(5)
@@ -65,6 +69,11 @@ def stream():
 @app.route('/webcam_stream')
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/calibration_message')
+def calibration():
+    # if calibration_check(): or something like that
+    return Response(f"data: !CALIBRATION_OK\n\n", content_type='text/event-stream')
 
 if __name__ == '__main__':
     app.run(debug=True)
