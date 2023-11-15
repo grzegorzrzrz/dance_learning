@@ -51,7 +51,7 @@ class Dance:
 
 
 class DanceManager:
-    def __init__(self, dance_video_path: str, pattern_dance: Dance) -> None:
+    def __init__(self, dance_video_path: str, pattern_dance: Dance, camera: cv2.VideoCapture) -> None:
         """A class which main purpose is to show a video of the dance, and comepare this dance
         to a data gathered by the camera.
 
@@ -63,8 +63,7 @@ class DanceManager:
         self._dance_video_path = dance_video_path
         self._pattern_dance = pattern_dance
         self._actual_dance = Dance([])
-        self._dance_displayer_thread = threading.Thread(target=self._TEMP_show_dance_pattern)
-        self._dance_data_getter_thread = threading.Thread(target=self._get_dance_data_from_camera)
+        self._camera = camera
         self._displayer_timestamp = 0
         self._is_video_being_played = False
 
@@ -241,7 +240,7 @@ def get_dance_data_from_video(video_path, dimension = DEFAULT_PROJECTION):
         data.append(skeleton)
         current_frame += 1
 
-class MockDanceManage(DanceManager):
+class MockDanceManager(DanceManager):
     def __init__(self, pattern_dance: str, actual_dance: Dance) -> None:
         """Mock testing class for DanceManager.
 
@@ -268,3 +267,28 @@ class MockDanceManage(DanceManager):
             self._displayer_timestamp = time.time() - time_start
             if self._displayer_timestamp > dance_time:
                 self._is_video_being_played = False
+
+    def _compare_recent_dance(self):
+        """
+        Get the comparison of recent dance, based on gathered data from camera and data about dance from viedo.
+        """
+        last_frame = self.actual_dance.get_skeleton_by_timestamp(self.displayer_timestamp)
+        if not last_frame:
+            return
+        pattern_frame = self.pattern_dance.get_skeleton_by_timestamp(last_frame.timestamp)
+
+        for lm in last_frame.landmarks():
+            landmark_id = lm.id
+            patt_lm = pattern_frame.get_landmark_by_id(landmark_id)
+            error = 0
+            if not lm:
+                #Camera could not find a person
+                pass
+            elif not patt_lm:
+                #Person could not be found in reference video
+                pass
+            else:
+                landmark_error = math.sqrt((lm.x - patt_lm.x)**2 + (lm.y - patt_lm.y)**2 + (lm.z - patt_lm.z)**2)
+                error += landmark_error
+
+        print(f"{last_frame.timestamp}: {error}")
