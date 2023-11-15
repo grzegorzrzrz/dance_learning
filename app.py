@@ -1,9 +1,14 @@
 from flask import Flask, Response, render_template, request, jsonify, stream_with_context
 import cv2
 import random, time
+from src.dance import DanceManager
 app = Flask(__name__)
 
+pattern_dance_path = "static/pattern.csv" #@TODO Remove it
+
 video_capture = cv2.VideoCapture(0)  # 0 for default camera (you can specify other camera indexes or video files)
+
+dance_manager = DanceManager(pattern_dance_path, video_capture)
 
 def generate_frames():
     while True:
@@ -36,6 +41,11 @@ def dance_page():
 def video_started():
     data = request.get_json()
     message = data.get('message', 'No message received')
+    if message == "!VIDEO_START":
+        dance_manager.compare_dances()
+    if message == "!VIDEO_END":
+        dance_manager.set_flag_is_video_being_played(False)
+        dance_manager.save_actual_dance("DEBUG.csv")
     print(f"Received message from the client: {message}")
     # Perform any additional actions you need here
     return jsonify(success=True)

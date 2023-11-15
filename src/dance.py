@@ -1,14 +1,12 @@
-from skeleton import Skeleton
+from src.skeleton import Skeleton
 from typing import List
-from pose_estimation import estaminate_from_frame, create_skeleton_from_raw_pose_landmarks, reverse_dictionary
-from data_writer import write_data_to_csv_file
-from constants import NODES_NAME, SKELETON_FILE, DEFAULT_PROJECTION
+from src.pose_estimation import estaminate_from_frame, create_skeleton_from_raw_pose_landmarks, reverse_dictionary
+from src.data_writer import write_data_to_csv_file
+from src.constants import NODES_NAME, SKELETON_FILE, DEFAULT_PROJECTION
 import cv2
 import csv
-import threading
 import math
-
-import time #@TODO Remove after testing
+import time
 
 class Dance:
     def __init__(self, skeleton_table: List[Skeleton], name="") -> None:
@@ -51,17 +49,17 @@ class Dance:
 
 
 class DanceManager:
-    def __init__(self, dance_video_path: str, pattern_dance: Dance, camera: cv2.VideoCapture) -> None:
-        """A class which main purpose is to show a video of the dance, and comepare this dance
+    def __init__(self, dance_data_path: Dance, camera: cv2.VideoCapture) -> None:
+        """A class which main purpose is to comepare dance from dance_data_path
         to a data gathered by the camera.
 
         Args:
-            dance_video_path (str): A path to a video which will be shown and which from which we want
-            a comparison with dance from camera.
             pattern_dance (Dance): A Dance class object, which contain data about dance from file dance_wideo_path.
+            camera (cv2.VideoCapture): Object representing camera, from which we can get live video with dance.
         """
-        self._dance_video_path = dance_video_path
-        self._pattern_dance = pattern_dance
+
+        self._dance_data_path = dance_data_path
+        self._pattern_dance = create_dance_from_data_file(dance_data_path)
         self._actual_dance = Dance([])
         self._camera = camera
         self._displayer_timestamp = 0
@@ -80,16 +78,12 @@ class DanceManager:
         return self._actual_dance
 
     @property
-    def dance_video_path(self) -> str:
-        return self._dance_video_path
+    def dance_data_path(self) -> str:
+        return self._dance_data_path
 
     @property
-    def dance_displayer_thread(self):
-        return self._dance_displayer_thread
-
-    @property
-    def dance_data_getter_thread(self):
-        return self._dance_data_getter_thread
+    def camera(self) -> cv2.VideoCapture:
+        return self._camera
 
     @property
     def displayer_timestamp(self) -> float:
@@ -103,67 +97,50 @@ class DanceManager:
         """
         return self._is_video_being_played
 
-    def compare_dances(self):
+    def set_flag_is_video_being_played(self, value: bool):
+        self._is_video_being_played = value
+
+    def set_displayer_timestamp(self, value: float):
+        self._displayer_timestamp = value
+
+    def compare_dances(self, dimension = DEFAULT_PROJECTION):
         """A method, which starts two treads, one from displaying viedo, second for gathering data from camera
         and continuously compares dances while viedo is being played.
         """
         self._is_video_being_played = True
-        self._dance_data_getter_thread.start()
+        start_time = time.time()
+        video_length = self.pattern_dance.get_last_skeleton().timestamp
+        self._actual_dance = Dance([])
+        self.set_displayer_timestamp(0)
 
-        while self._is_video_being_played:
+        while self._is_video_being_played and self.displayer_timestamp < video_length:
+            ret, frame = self.camera.read()
+            imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            result = estaminate_from_frame(imgRGB)
+            self.set_displayer_timestamp(time.time() - start_time)
+            skeleton = create_skeleton_from_raw_pose_landmarks(result.pose_world_landmarks, self.displayer_timestamp, dimension)
+            self.actual_dance.add_skeleton(skeleton)
             self._compare_recent_dance()
+
+            if not ret:
+                #Something is wrong with camera
+                break
 
     def save_actual_dance(self, file_name):
         """Sace dance form camera as a csv file named file_name.
         """
         write_data_to_csv_file(self.actual_dance, file_name, SKELETON_FILE)
 
-    def _TEMP_show_dance_pattern(self):
-        """A method responsible for displaying video. Method works until video is finished.
-        """
-        cap = cv2.VideoCapture(self._dance_video_path)
 
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        frame_time = int(1000/fps)
-        current_frame = 0
-        while True:
-            success, img = cap.read()
+    # def _get_dance_data_from_camera(self, dimension = DEFAULT_PROJECTION):
+    #     """A method responsible gathering data from camera and updating
+    #     actual_dance Dance class object with new Skeletons bases on its data.
+    #     Method works until viedo is being played.
 
-            self._displayer_timestamp = current_frame / fps
-            if success:
-                cv2.putText(img, str(round(self.displayer_timestamp, 4)), (50,50), cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0), 3)
-
-            else:
-                #Video is finished
-                self._is_video_being_played = False
-                break
-
-            cv2.imshow("Image", img)
-            cv2.waitKey(frame_time)
-            current_frame += 1
-
-
-    def _get_dance_data_from_camera(self, dimension = DEFAULT_PROJECTION):
-        """A method responsible gathering data from camera and updating
-        actual_dance Dance class object with new Skeletons bases on its data.
-        Method works until viedo is being played.
-
-        Args:
-            dimension (str, optional): Describes in how many dimensions should data be generated. Possible values are "2D" and "3D".
-            Defaults to DEFAULT_PROJECTION ("2D").
-        """
-        cap = cv2.VideoCapture(0)
-        self._dance_displayer_thread.start()
-        while self._is_video_being_played:
-            ret, frame = cap.read()
-            imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            result = estaminate_from_frame(imgRGB)
-            skeleton = create_skeleton_from_raw_pose_landmarks(result.pose_world_landmarks, self.displayer_timestamp, dimension)
-            self.actual_dance.add_skeleton(skeleton)
-
-            if not ret:
-                #Something is wrong with camera
-                break
+    #     Args:
+    #         dimension (str, optional): Describes in how many dimensions should data be generated. Possible values are "2D" and "3D".
+    #         Defaults to DEFAULT_PROJECTION ("2D").
+    #     """
 
     def _compare_recent_dance(self):
         """
@@ -292,3 +269,21 @@ class MockDanceManager(DanceManager):
                 error += landmark_error
 
         print(f"{last_frame.timestamp}: {error}")
+
+# def dance(data_path, dance_path):
+#     dance = create_dance_from_data_file(data_path)
+#     dance_manager = DanceManager(dance_path, dance)
+#     dance_manager.compare_dances()
+#     dance_manager.save_actual_dance("src/atemp.csv")
+
+# if __name__ == "__main__":
+#     # test = get_dance_data_from_video("src/test (1).mp4")
+#     # write_data_to_csv_file(test, "src/temp.csv")
+#     # dance("src/temp.csv", "src/test (1).mp4")
+#     pd = create_dance_from_data_file("static/pattern.csv")
+#     ad = create_dance_from_data_file("static/actual.csv")
+#     dm = MockDanceManager(pd, ad)
+#     dm.compare_dances()
+#     # d = get_dance_data_from_video("static/d1v3.mp4")
+#     # write_data_to_csv_file(d, "static/actual.csv", SKELETON_FILE)
+#     # pass

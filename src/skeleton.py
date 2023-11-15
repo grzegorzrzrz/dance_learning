@@ -1,5 +1,5 @@
 import csv
-from landmark import *
+from src.landmark import *
 from math import isclose
 
 

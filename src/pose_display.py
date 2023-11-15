@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.widgets import Slider
-from pose_estimation import *
+from src.pose_estimation import *
 import numpy as np
-from dance import create_dance_from_data_file, Dance
+from src.dance import create_dance_from_data_file, Dance
 
 
 
@@ -137,3 +137,5 @@ def compare_dances_from_file(pattern_dance_path, actual_dance_path):
                                   len(pattern_dance.skeleton_table), fargs=([ax, pattern_dance, actual_dance]), interval=17)
 
     plt.show()
+
+plot_ineractive_double_dance_2d("static/pattern.csv", "static/actual.csv")
