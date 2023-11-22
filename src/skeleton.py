@@ -1,5 +1,6 @@
 import csv
-from src.landmark import *
+import math
+from landmark import *
 from math import isclose
 
 
@@ -39,6 +40,29 @@ class Skeleton:
         for landmark in landmark_list:
             if landmark.id == id:
                 return landmark
+    
+    def get_cossin(self, id) -> [float, float]:
+        """returns a cosine and sine from an angle betwen three poins"""
+        x1 = self.get_landmark_by_id(id[0]).x
+        y1 = self.get_landmark_by_id(id[0]).y
+        x2 = self.get_landmark_by_id(id[1]).x
+        y2 = self.get_landmark_by_id(id[1]).y
+        x3 = self.get_landmark_by_id(id[2]).x
+        y3 = self.get_landmark_by_id(id[2]).y
+
+        ux, uy = x1 - x2, y1 - y2
+        vx, vy = x3 - x2, y3 - y2
+
+        u_length = math.sqrt(ux**2 + uy**2)
+        v_length = math.sqrt(vx**2 + vy**2)
+
+        dot_product = vx*ux + vy*uy#VUcos
+        cross_product = ux*vy - uy*vx#VUsin
+
+        cos = dot_product/(u_length*v_length)
+        sin = cross_product/(u_length*v_length)
+
+        return cos, sin
 
     @property
     def timestamp(self):
@@ -56,6 +80,13 @@ class Skeleton:
             if landmark != other_lm:
                 return False
         return isclose(self.timestamp, __value.timestamp)
+    
+    def __bool__(self) -> bool:
+        # return bool(self.landmarks()[1])
+        for landmark in self.landmarks():
+            if not landmark:
+                return False
+        return True
 
 
 

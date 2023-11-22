@@ -1,8 +1,8 @@
-from src.skeleton import Skeleton
+from skeleton import Skeleton
 from typing import List
-from src.pose_estimation import estaminate_from_frame, create_skeleton_from_raw_pose_landmarks, reverse_dictionary
-from src.data_writer import write_data_to_csv_file
-from src.constants import NODES_NAME, SKELETON_FILE, DEFAULT_PROJECTION
+from pose_estimation import estaminate_from_frame, create_skeleton_from_raw_pose_landmarks, reverse_dictionary
+from data_writer import write_data_to_csv_file
+from constants import NODES_NAME, SKELETON_FILE, DEFAULT_PROJECTION
 import cv2
 import csv
 import math
@@ -240,7 +240,7 @@ class MockDanceManager(DanceManager):
         dance_time = self.pattern_dance.get_last_skeleton().timestamp
 
         while self._is_video_being_played:
-            self._compare_recent_dance()
+            self.alt_compare_recent_dance(0)
             self._displayer_timestamp = time.time() - time_start
             if self._displayer_timestamp > dance_time:
                 self._is_video_being_played = False
@@ -270,6 +270,51 @@ class MockDanceManager(DanceManager):
 
         print(f"{last_frame.timestamp}: {error}")
 
+    def alt_compare_recent_dance(self, delay) -> float:#delay can be set to account dancers dealy
+        last_frame = self.actual_dance.get_skeleton_by_timestamp(self.displayer_timestamp)  #Returns a Skeleton, which has the biggest timestamp from all Skeletons in this Dance. Returns None if there isn't any Skeleon in this list.
+
+        pattern_frame = self.pattern_dance.get_skeleton_by_timestamp(last_frame.timestamp - delay)#what if timestam is negative?
+
+        if not last_frame or not pattern_frame:# triggers when there is no dance data
+            return
+
+        # if isinstance(EmptySkeleton, )
+        #last_frame is the skeleton of the user
+        #pattern_frame is the skeleton generated form the video for that time instance
+
+        limbs = {#orientation from their perspective
+            #key -> [points, weight(for cumulative error)]
+            "right_arm":  [[14,12,24], 0.7],
+            "right_hand": [[16,12,24], 1],
+            "left_arm":   [[13,11,23], 0.7],
+            "left_hand":  [[15,11,23], 1],
+            "right_leg":  [[23,24,26], 0.2],
+            "right_foot": [[23,24,28], 0.2],
+            "left_leg":   [[24,23,25], 0.2],
+            "left_foot":  [[24,23,27], 0.2]
+            }
+        
+        #practice error calculation for one limb
+        a_cos, a_sin = last_frame.get_cossin(limbs["right_arm"][0])
+        p_cos, p_sin = pattern_frame.get_cossin(limbs["right_arm"][0])
+        error_rignt_arm = min(abs(a_cos - p_cos), abs(a_sin - p_sin))
+
+        #actual error calculation for all limbs
+        error = 0
+        sum = 0
+        for limb in limbs:
+            a_cos, a_sin = last_frame.get_cossin(limbs[limb][0])
+            p_cos, p_sin = pattern_frame.get_cossin(limbs[limb][0])
+            error += min(abs(a_cos - p_cos), abs(a_sin - p_sin)) * limbs[limb][1]
+            sum += limbs[limb][1]# update total weight
+
+        error = error/sum#adjust error for weight
+        #print(a_cos, p_cos)
+        #print(error_rignt_arm)
+        print(error)
+        return error_rignt_arm#lets plot it and see if it makes sense 
+
+
 # def dance(data_path, dance_path):
 #     dance = create_dance_from_data_file(data_path)
 #     dance_manager = DanceManager(dance_path, dance)
@@ -287,3 +332,9 @@ class MockDanceManager(DanceManager):
 #     # d = get_dance_data_from_video("static/d1v3.mp4")
 #     # write_data_to_csv_file(d, "static/actual.csv", SKELETON_FILE)
 #     # pass
+
+if __name__ == "__main__":
+    pd = create_dance_from_data_file("pattern.csv")
+    ad = create_dance_from_data_file("actual.csv")
+    dm = MockDanceManager(pd, ad)
+    dm.compare_dances()

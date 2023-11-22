@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.widgets import Slider
-from src.pose_estimation import *
+from pose_estimation import *
 import numpy as np
-from src.dance import create_dance_from_data_file, Dance
+from dance import create_dance_from_data_file, Dance
 
 
 
