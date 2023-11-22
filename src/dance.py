@@ -293,7 +293,7 @@ class MockDanceManager(DanceManager):
             "left_leg":   [[24,23,25], 0.2],
             "left_foot":  [[24,23,27], 0.2]
             }
-        
+
         #practice error calculation for one limb
         a_cos, a_sin = last_frame.get_cossin(limbs["right_arm"][0])
         p_cos, p_sin = pattern_frame.get_cossin(limbs["right_arm"][0])
@@ -312,7 +312,7 @@ class MockDanceManager(DanceManager):
         #print(a_cos, p_cos)
         #print(error_rignt_arm)
         print(error)
-        return error_rignt_arm#lets plot it and see if it makes sense 
+        return error_rignt_arm#lets plot it and see if it makes sense
 
 
 # def dance(data_path, dance_path):
@@ -332,9 +332,3 @@ class MockDanceManager(DanceManager):
 #     # d = get_dance_data_from_video("static/d1v3.mp4")
 #     # write_data_to_csv_file(d, "static/actual.csv", SKELETON_FILE)
 #     # pass
-
-if __name__ == "__main__":
-    pd = create_dance_from_data_file("pattern.csv")
-    ad = create_dance_from_data_file("actual.csv")
-    dm = MockDanceManager(pd, ad)
-    dm.compare_dances()
