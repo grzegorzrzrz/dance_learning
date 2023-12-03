@@ -73,7 +73,8 @@ def video_feed():
 @app.route('/calibration_message')
 def calibration():
     # if calibration_check(): or something like that
-    return Response(f"data: !CALIBRATION_OK\n\n", content_type='text/event-stream')
+    # return Response(f"data: !CALIBRATION_OK\n\n", content_type='text/event-stream')
+    pass
 
 if __name__ == '__main__':
     app.run(debug=True)

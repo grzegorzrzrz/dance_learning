@@ -4,43 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dance Learning Application</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='background.css') }}">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
-            background: linear-gradient(30deg, #b193be, #630975);
-            background-size: 400% 400%;
-            animation: gradientAnimation 6s linear infinite;
-        }
-
-        @keyframes gradientAnimation {
-            0% {
-                background-position: 100% 0%;
-            }
-            50% {
-                background-position: 0% 100%;
-            }
-            100% {
-                background-position: 100% 0%;
-            }
         }
 
         .title {
             text-align: center;
-        }
-
-        h1 {
-            font-size: 36px;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .miniature-container {
@@ -89,7 +60,7 @@
         <h1>Choose the dance!</h1>
     </div>
     <div class="miniature-container">
-        <a href="calibrate"> <!-- Link to another webpage -->
+        <span onclick="transitionToPage('/calibrate')"> <!-- Link to another webpage -->
             <div class="miniature" onmouseover="startVideo('video1');" onmouseout="stopVideo('video1')">
                 <video id="video1" width="320">
                     <source src="{{ url_for('static', filename='dance.mp4') }}" type="video/mp4">
@@ -98,7 +69,7 @@
                 <img src="{{ url_for('static', filename='dance_preview.png') }}" width="320" alt="Dance 1">
                 <p class="miniature-title">Feel Special - TWICE</p>
             </div>
-        </a>
+        </span>
 
         <a href="#" onclick="startApplication(); return false;">
             <div class="miniature">
@@ -113,11 +84,8 @@
         <!-- Add more dance miniatures as needed -->
     </div>
 
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script>
-        function startApplication() {
-            window.location.href = '/menu';
-        }
-
         function resetVideo(video) {
             video.currentTime = 0;
         }
@@ -133,5 +101,6 @@
             video.pause();
         }
     </script>
+
 </body>
 </html>
