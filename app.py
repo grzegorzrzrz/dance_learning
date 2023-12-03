@@ -8,7 +8,7 @@ pattern_dance_path = "static/pattern.csv" #@TODO Remove it
 
 video_capture = cv2.VideoCapture(0)  # 0 for default camera (you can specify other camera indexes or video files)
 
-dance_manager = DanceManager(pattern_dance_path, video_capture)
+dance_manager = DanceManager(video_capture)
 
 def generate_frames():
     while True:
@@ -46,10 +46,16 @@ def video_started():
     data = request.get_json()
     message = data.get('message', 'No message received')
     if message == "!VIDEO_START":
-        dance_manager.compare_dances()
+
+        #@TODO: Add camera check to frontend
+        #dance_manager.set_flag_is_camera_checked(False)
+        #dance_manager.check_camera(<some_time_in_seconds>)
+        # while not dance_manager.is_camera_checked:
+        #     <loop>
+
+        dance_manager.compare_dances(pattern_dance_path)
     if message == "!VIDEO_END":
         dance_manager.set_flag_is_video_being_played(False)
-        dance_manager.save_actual_dance("DEBUG.csv")
     print(f"Received message from the client: {message}")
     # Perform any additional actions you need here
     return jsonify(success=True)
