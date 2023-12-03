@@ -1,6 +1,9 @@
 LEFT_ANCHOR_CREATOR_NODE = 23
 RIGHT_ANCHOR_CREATOR_NODE = 24
 MODEL_PATH = "src/pose_landmarker_heavy.task"
+SKELETON_FILE = "src/skeleton.csv"
+DEFAULT_PROJECTION = "2D"
+DEFAULT_CHECKING_CAMERA_TIME = 3
 NODES_NAME = {
 
     -1: "anchor",
@@ -41,6 +44,3 @@ NODES_NAME = {
 }
 
 N_RAW_NODES = len(NODES_NAME)
-
-SKELETON_FILE = "src/skeleton.csv"
-DEFAULT_PROJECTION = "2D"

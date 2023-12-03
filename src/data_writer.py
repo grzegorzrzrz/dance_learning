@@ -1,7 +1,7 @@
-from skeleton import *
+from src.skeleton import *
 import csv
 from typing import List
-from constants import NODES_NAME, SKELETON_FILE
+from src.constants import NODES_NAME, SKELETON_FILE
 
 def write_data_to_csv_file(dance_data, path: str, skeleton_file=SKELETON_FILE):
 
