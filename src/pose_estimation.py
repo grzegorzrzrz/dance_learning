@@ -1,8 +1,8 @@
 import cv2
 import mediapipe as mp
 import time
-from src.constants import LEFT_ANCHOR_CREATOR_NODE, RIGHT_ANCHOR_CREATOR_NODE, SKELETON_FILE, DEFAULT_PROJECTION, MODEL_PATH
-from src.skeleton import *
+from constants import LEFT_ANCHOR_CREATOR_NODE, RIGHT_ANCHOR_CREATOR_NODE, SKELETON_FILE, DEFAULT_PROJECTION, MODEL_PATH
+from skeleton import *
 
 
 BaseOptions = mp.tasks.BaseOptions

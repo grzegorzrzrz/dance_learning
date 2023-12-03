@@ -1,5 +1,5 @@
 import sys
-from src.dance import create_dance_from_data_file, MockDanceManager
+from dance import create_dance_from_data_file, MockDanceManager
 
 if __name__ == "__main__":
     pd = create_dance_from_data_file(sys.argv[1])

@@ -1,6 +1,6 @@
 import csv
 import math
-from src.landmark import *
+from landmark import *
 from math import isclose
 
 

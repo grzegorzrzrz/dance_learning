@@ -53,7 +53,7 @@ def video_started():
         # while not dance_manager.is_camera_checked:
         #     <loop>
 
-        dance_manager.compare_dances(pattern_dance_path)
+        dance_manager.compare_dances(pattern_dance_path, save_actual_dance=True)
     if message == "!VIDEO_END":
         dance_manager.set_flag_is_video_being_played(False)
     print(f"Received message from the client: {message}")

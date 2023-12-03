@@ -1,12 +1,14 @@
-from src.skeleton import Skeleton
+from skeleton import Skeleton
 from typing import List
-from src.pose_estimation import estaminate_from_frame, create_skeleton_from_raw_pose_landmarks, reverse_dictionary
-from src.data_writer import write_data_to_csv_file
-from src.constants import NODES_NAME, SKELETON_FILE, DEFAULT_PROJECTION, DEFAULT_CHECKING_CAMERA_TIME
+from pose_estimation import estaminate_from_frame, create_skeleton_from_raw_pose_landmarks, reverse_dictionary
+from data_writer import write_data_to_csv_file
+from constants import NODES_NAME, SKELETON_FILE, DEFAULT_PROJECTION, ACTUAL_DANCE_DATA_PATH
+from datetime import datetime
 import cv2
 import csv
 import math
 import time
+import os
 
 class Dance:
     def __init__(self, skeleton_table: List[Skeleton], name="") -> None:
@@ -138,7 +140,7 @@ class DanceManager:
         self._is_video_being_played = True
         start_time = time.time()
         video_length = self.pattern_dance.get_last_skeleton().timestamp
-        self._actual_dance = Dance([])
+        self._actual_dance = Dance([], name=self.actual_dance.name)
         self.set_displayer_timestamp(0)
 
         while self._is_video_being_played and self.displayer_timestamp < video_length:
@@ -155,11 +157,13 @@ class DanceManager:
                 break
 
         if save_actual_dance:
-            self.save_actual_dance("actual_temp.csv") #@TODO Change names of files
+            self.save_actual_dance()
 
-    def save_actual_dance(self, file_name):
+    def save_actual_dance(self, file_name=None):
         """Sace dance form camera as a csv file named file_name.
         """
+        if not file_name:
+            file_name = f"{ACTUAL_DANCE_DATA_PATH}/{add_current_timestamp_to_filename(self.actual_dance.name)}.csv"
         write_data_to_csv_file(self.actual_dance, file_name, SKELETON_FILE)
 
 
@@ -198,6 +202,20 @@ class DanceManager:
 
         print(f"{last_frame.timestamp}: {error}")
 
+def get_dance_name_from_path(path: str):
+    file_name = os.path.basename(path)
+    file_name = file_name.split(".")[0]
+    return file_name
+
+def add_current_timestamp_to_filename(filename):
+    now = datetime.now()
+    datetime_format = "%Y-%m-%d_%H-%M-%S"
+    datetime_text = now.strftime(datetime_format)
+    new_filename = f"{filename}_{datetime_text}"
+
+    return new_filename
+
+
 def create_dance_from_data_file(data_file):
 
     nodes_name_dict = reverse_dictionary(NODES_NAME)
@@ -227,7 +245,7 @@ def create_dance_from_data_file(data_file):
                 z = line[raw_headlines[3*node + 3]]
                 current_raw_skeleton.append([id, x, y, z])
             skeleton_list.append(Skeleton(current_raw_skeleton, timestamp))
-    return Dance(skeleton_list)
+    return Dance(skeleton_list, name=get_dance_name_from_path(data_file))
 
 
 def get_dance_data_from_video(video_path, dimension = DEFAULT_PROJECTION):
@@ -240,7 +258,7 @@ def get_dance_data_from_video(video_path, dimension = DEFAULT_PROJECTION):
     while True:
         success, img = cap.read()
         if not success:
-            return Dance(data)
+            return Dance(data, name=get_dance_name_from_path(video_path))
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         results = estaminate_from_frame(imgRGB)
         timestamp = current_frame / fps
