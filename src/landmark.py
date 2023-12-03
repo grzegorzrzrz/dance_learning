@@ -1,5 +1,5 @@
 import numpy as np
-from constants import NODES_NAME
+from src.constants import NODES_NAME
 from math import isclose
 
 

@@ -1,8 +1,8 @@
-from skeleton import Skeleton
+from src.skeleton import Skeleton
 from typing import List
-from pose_estimation import estaminate_from_frame, create_skeleton_from_raw_pose_landmarks, reverse_dictionary
-from data_writer import write_data_to_csv_file
-from constants import NODES_NAME, SKELETON_FILE, DEFAULT_PROJECTION
+from src.pose_estimation import estaminate_from_frame, create_skeleton_from_raw_pose_landmarks, reverse_dictionary
+from src.data_writer import write_data_to_csv_file
+from src.constants import NODES_NAME, SKELETON_FILE, DEFAULT_PROJECTION
 import cv2
 import csv
 import math
