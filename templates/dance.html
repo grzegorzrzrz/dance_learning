@@ -4,6 +4,11 @@
     <title>Webcam Stream</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='background.css') }}">
+    <style>
+    #menu-button {
+        z-index: 3;
+    }
+    </style>
 </head>
 <body>
     <div class="video_container">
@@ -13,11 +18,13 @@
 
         <div class="dance_video_container">
             <video id="dance_video"  height="710">
-                <source src="{{ url_for('static', filename='dance.mp4') }}" type="video/mp4">
+                <source src="{{ url_for('static', filename='') }}" type="video/mp4">
             </video>
         </div>
         <div class="close-range-indicator" id="indicator"></div>
+        <button id="menu-button">Menu</button>
     </div>
+
 
     <div class="finishing-screen" id="finishing-screen" style="display: none;
     flex-direction: column; justify-content: center;">
@@ -27,16 +34,24 @@
         <h3>Number of Good Moves: <span id="good-moves">0</span></h2>
         <h3>Number of Excellent Moves: <span id="excellent-moves">0</span></h2>
         <h3>Number of Bad Moves: <span id="bad-moves">0</span></h2>
-        <button id="menu-button">Go back to menu</button>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script>
         const imgElement = document.getElementById('webcam_stream');
+        const x_button = document.getElementById('x-button');
         const streamUrl = '/webcam_stream';
         imgElement.src = streamUrl;
         const eventSource = new EventSource('/point_stream');
+        const clickedItem = localStorage.getItem('clickedItem');
 
+if (clickedItem) {
+    // Set the video source based on the clicked item
+    console.log(clickedItem);
+    const videoElement = document.getElementById('dance_video');
+    videoElement.src = `{{ url_for('static', filename='') }}${clickedItem}.mp4`;
+    videoElement.load(); // Reload the video element
+}
 
         let goodMoves = 0;
         let excellentMoves = 0;

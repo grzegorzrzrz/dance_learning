@@ -4,8 +4,7 @@ import random, time
 from src.dance import DanceManager
 app = Flask(__name__)
 
-pattern_dance_path = "static/pattern.csv" #@TODO Remove it
-
+pattern_dance_path = None
 video_capture = cv2.VideoCapture(0)  # 0 for default camera (you can specify other camera indexes or video files)
 
 dance_manager = DanceManager(video_capture)
@@ -46,7 +45,7 @@ def video_started():
     data = request.get_json()
     message = data.get('message', 'No message received')
     if message == "!VIDEO_START":
-
+        pattern_dance_path = "static/pattern.csv"
         #@TODO: Add camera check to frontend
         #dance_manager.set_flag_is_camera_checked(False)
         #dance_manager.check_camera(<some_time_in_seconds>)
@@ -59,6 +58,17 @@ def video_started():
     print(f"Received message from the client: {message}")
     # Perform any additional actions you need here
     return jsonify(success=True)
+
+@app.route('/get_dance_name', methods=['POST'])
+def get_dance_name():
+    data = request.get_json()
+    clicked_item = data.get('clickedItem')
+    global pattern_dance_path
+    pattern_dance_path = f"static/{clicked_item}.csv"
+
+    return jsonify(success=True)
+
+
 
 def generate_messages():
     for _ in range (7):
@@ -76,11 +86,13 @@ def stream():
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/calibration_message')
-def calibration():
-    # if calibration_check(): or something like that
-    # return Response(f"data: !CALIBRATION_OK\n\n", content_type='text/event-stream')
-    pass
+@app.route('/calibration_ok_message')
+def calibration_ok_msg():
+    dance_manager.set_flag_is_camera_checked(False)
+    dance_manager.check_camera(3)
+    while not dance_manager.is_camera_checked:
+        time.sleep(1)
+    return Response(f"data: !CALIBRATION_OK\n\n", content_type='text/event-stream')
 
 if __name__ == '__main__':
     app.run(debug=True)
