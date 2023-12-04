@@ -1,6 +1,8 @@
 from flask import Flask, Response, render_template, request, jsonify, stream_with_context
 import cv2
 import random, time
+import sys
+sys.path.append("src")
 from src.dance import DanceManager
 app = Flask(__name__)
 
@@ -45,11 +47,6 @@ def video_started():
     data = request.get_json()
     message = data.get('message', 'No message received')
     if message == "!VIDEO_START":
-        #@TODO: Add camera check to frontend
-        #dance_manager.set_flag_is_camera_checked(False)
-        #dance_manager.check_camera(<some_time_in_seconds>)
-        # while not dance_manager.is_camera_checked:
-        #     <loop>
         dance_manager.compare_dances(pattern_dance_path)
     if message == "!VIDEO_END":
         dance_manager.set_flag_is_video_being_played(False)
@@ -88,8 +85,6 @@ def video_feed():
 def calibration_ok_msg():
     dance_manager.set_flag_is_camera_checked(False)
     dance_manager.check_camera(3)
-    while not dance_manager.is_camera_checked:
-        time.sleep(1)
     return Response(f"data: !CALIBRATION_OK\n\n", content_type='text/event-stream')
 
 if __name__ == '__main__':
