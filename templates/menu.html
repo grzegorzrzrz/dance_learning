@@ -60,7 +60,7 @@
         <h1>Choose the dance!</h1>
     </div>
     <div class="miniature-container">
-        <span onclick="transitionToPage('/calibrate')"> <!-- Link to another webpage -->
+        <span id="dance_1" onclick="transitionToPage('/calibrate')"> <!-- Link to another webpage -->
             <div class="miniature" onmouseover="startVideo('video1');" onmouseout="stopVideo('video1')">
                 <video id="video1" width="320">
                     <source src="{{ url_for('static', filename='dance.mp4') }}" type="video/mp4">
@@ -71,17 +71,17 @@
             </div>
         </span>
 
-        <a href="#" onclick="startApplication(); return false;">
-            <div class="miniature">
-                <video width="320" height="240" controls onmouseover="resetVideo(this)">
-                    <source src="dance_video_2.mp4" type="video/mp4">
+
+        <span id="dance_2" onclick="transitionToPage('/calibrate')"> <!-- Link to another webpage -->
+            <div class="miniature" onmouseover="startVideo('video2');" onmouseout="stopVideo('video2')">
+                <video id="video2" width="320">
+                    <source src="{{ url_for('static', filename='dance_2.mp4') }}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
-                <img src="dance_image_2.jpg" alt="Dance 2">
-                <p class="miniature-title">Dance 2</p>
+                <img src="{{ url_for('static', filename='dance_preview_1.png') }}" width="320" alt="Dance 2">
+                <p class="miniature-title">Another one</p>
             </div>
-        </a>
-        <!-- Add more dance miniatures as needed -->
+        </span>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
@@ -100,6 +100,40 @@
             const video = document.getElementById(id);
             video.pause();
         }
+
+        document.getElementById('dance_1').addEventListener('click', function() {
+        localStorage.setItem('clickedItem', 'dance_1');
+
+        fetch('/get_dance_name', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        clickedItem: localStorage.getItem('clickedItem'),
+    }),
+});
+
+
+
+    });
+
+    document.getElementById('item2').addEventListener('click', function() {
+        localStorage.setItem('clickedItem', 'dance_2');
+
+        fetch('/get_dance_name', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        clickedItem: localStorage.getItem('clickedItem'),
+    }),
+});
+
+    });
+
+
     </script>
 
 </body>
