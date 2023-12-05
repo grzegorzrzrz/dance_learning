@@ -60,7 +60,6 @@ def get_dance_name():
     clicked_item = data.get('clickedItem')
     global pattern_dance_path
     pattern_dance_path = f"static/data/pattern_dance_data/{clicked_item}.csv"
-
     return jsonify(success=True)
 
 
