@@ -63,10 +63,10 @@
         <span id="dance_1" onclick="transitionToPage('/calibrate')"> <!-- Link to another webpage -->
             <div class="miniature" onmouseover="startVideo('video1');" onmouseout="stopVideo('video1')">
                 <video id="video1" width="320">
-                    <source src="{{ url_for('static', filename='dance.mp4') }}" type="video/mp4">
+                    <source src="{{ url_for('static', filename='/data/dance_videos/dance_1.mp4') }}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
-                <img src="{{ url_for('static', filename='dance_preview.png') }}" width="320" alt="Dance 1">
+                <img src="{{ url_for('static', filename='/data/dance_videos/dance_preview.png') }}" width="320" alt="Dance 1">
                 <p class="miniature-title">Feel Special - TWICE</p>
             </div>
         </span>
@@ -75,10 +75,10 @@
         <span id="dance_2" onclick="transitionToPage('/calibrate')"> <!-- Link to another webpage -->
             <div class="miniature" onmouseover="startVideo('video2');" onmouseout="stopVideo('video2')">
                 <video id="video2" width="320">
-                    <source src="{{ url_for('static', filename='dance_2.mp4') }}" type="video/mp4">
+                    <source src="{{ url_for('static', filename='/data/dance_videos/dance_2.mp4') }}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
-                <img src="{{ url_for('static', filename='dance_preview_1.png') }}" width="320" alt="Dance 2">
+                <img src="{{ url_for('static', filename='/data/dance_videos/dance_preview_1.png') }}" width="320" alt="Dance 2">
                 <p class="miniature-title">Another one</p>
             </div>
         </span>

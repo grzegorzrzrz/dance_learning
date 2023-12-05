@@ -18,7 +18,7 @@
 
         <div class="dance_video_container">
             <video id="dance_video"  height="710">
-                <source src="{{ url_for('static', filename='') }}" type="video/mp4">
+                <source src="" type="video/mp4">
             </video>
         </div>
         <div class="close-range-indicator" id="indicator"></div>
@@ -47,9 +47,9 @@
 
 if (clickedItem) {
     // Set the video source based on the clicked item
-    console.log(clickedItem);
     const videoElement = document.getElementById('dance_video');
-    videoElement.src = `{{ url_for('static', filename='') }}${clickedItem}.mp4`;
+    let a = "/data/dance_videos/"+clickedItem;
+    videoElement.src = `{{ url_for('static', filename='') }}${a}.mp4`;
     videoElement.load(); // Reload the video element
 }
 

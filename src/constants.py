@@ -5,9 +5,9 @@ SKELETON_FILE = "src/skeleton.csv"
 DEFAULT_PROJECTION = "2D"
 DEFAULT_CHECKING_CAMERA_TIME = 3
 
-DANCE_VIDEOS_PATH = "data/dance_videos"
-PATTERN_DANCE_DATA_PATH = "data/pattern_dance_data"
-ACTUAL_DANCE_DATA_PATH = "data/actual_dance_data"
+DANCE_VIDEOS_PATH = "static/data/dance_videos"
+PATTERN_DANCE_DATA_PATH = "static/data/pattern_dance_data"
+ACTUAL_DANCE_DATA_PATH = "static/data/actual_dance_data"
 
 NODES_NAME = {
 
