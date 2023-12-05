@@ -140,7 +140,7 @@ class DanceManager:
         self._is_video_being_played = True
         start_time = time.time()
         video_length = self.pattern_dance.get_last_skeleton().timestamp
-        self._actual_dance = Dance([], name=self.actual_dance.name)
+        self._actual_dance = Dance([], name=self.pattern_dance.name)
         self.set_displayer_timestamp(0)
 
         while self._is_video_being_played and self.displayer_timestamp < video_length:
