@@ -29,14 +29,16 @@
             cursor: pointer;
             transition: transform 0.3s;
             position: relative;
+            perspective: 1000px; /* Adding perspective for depth effect */
         }
 
         .miniature:hover {
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
 
         .miniature img {
             max-width: 100%;
+
         }
 
         .miniature video {
@@ -45,6 +47,9 @@
             top: 0;
             left: 0;
             display: none;
+            transform: translateZ(20px); /* Move the video slightly forward for depth */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Add shadow background */
+            border-radius: 10px; /* Optional: Add rounded corners */
         }
 
         .miniature:hover video {
@@ -53,8 +58,11 @@
 
         .miniature-title {
             font-size: 16px;
+            font-weight: bold; /* Make it bold */
             color: #fff;
             margin-top: 10px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Add text shadow for a cooler effect */
         }
     </style>
 </head>
