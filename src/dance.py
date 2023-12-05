@@ -163,7 +163,7 @@ class DanceManager:
         """Sace dance form camera as a csv file named file_name.
         """
         if not file_name:
-            file_name = f"{ACTUAL_DANCE_DATA_PATH}/{add_current_timestamp_to_filename(self.actual_dance.name)}.csv"
+            file_name = f"{ACTUAL_DANCE_DATA_PATH}/{add_current_timestamp_to_filename(self.pattern_dance.name)}.csv"
         write_data_to_csv_file(self.actual_dance, file_name, SKELETON_FILE)
 
 
