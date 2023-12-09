@@ -7,6 +7,8 @@ import cv2
 import csv
 import math
 import time
+import numpy
+import matplotlib.pyplot as plt
 
 class Dance:
     def __init__(self, skeleton_table: List[Skeleton], name="") -> None:
@@ -239,11 +241,55 @@ class MockDanceManager(DanceManager):
         time_start = time.time()
         dance_time = self.pattern_dance.get_last_skeleton().timestamp
 
+        values = []
+        inv_values =[]
+        base_values = []
+        t = []
+
         while self._is_video_being_played:
-            self.alt_compare_recent_dance(0)
+            depth = 0.5
+            n = 10
+            radius = numpy.linspace(0,-depth,n)
+            results = [[]]
+
+            for delay in radius:
+                score,output = self.alt_compare_recent_dance(delay)
+                #results.append(score)
+                if score != None:
+                    results.append((score,output))
+
+            #print(min(results) - results[0])
+            #print(results)
+            values.append(min(results))
+            inv_values.append(max(results))
+            base_values.append(results[0])
+
+            t.append(self._displayer_timestamp)
+            #print(f"time: {self._displayer_timestamp}, score:{min(results)}, inv_score{max(results)}")
             self._displayer_timestamp = time.time() - time_start
             if self._displayer_timestamp > dance_time:
                 self._is_video_being_played = False
+        
+        #print(values)
+        #print(len(values), len(t))
+
+        avg_value = sum(values)/len(values)
+        inv_avg_value = sum(inv_values)/len(inv_values)
+        avg_base = sum(base_values)/len(base_values)
+
+        print(f"average score is: {avg_value}, average worst score is: {inv_avg_value}, base score is {avg_base}")
+
+        if len(values) == len(inv_values) == len(t):
+            plt.plot(t,inv_values, linewidth = 1, label = "worst")
+            plt.plot(t,base_values, linewidth = 1, label = "base")
+            plt.plot(t,values, linewidth = 1,label = "best")
+            plt.legend()
+            plt.show()
+        else:
+            print("Pyplot lists not matching")
+        #PLOT THE VALUES
+
+
 
     def _compare_recent_dance(self):
         """
@@ -288,6 +334,7 @@ class MockDanceManager(DanceManager):
             "right_hand": [[16,12,24], 1],
             "left_arm":   [[13,11,23], 0.7],
             "left_hand":  [[15,11,23], 1],
+
             "right_leg":  [[23,24,26], 0.2],
             "right_foot": [[23,24,28], 0.2],
             "left_leg":   [[24,23,25], 0.2],
@@ -302,17 +349,27 @@ class MockDanceManager(DanceManager):
         #actual error calculation for all limbs
         error = 0
         sum = 0
+        output = ""
         for limb in limbs:
             a_cos, a_sin = last_frame.get_cossin(limbs[limb][0])
             p_cos, p_sin = pattern_frame.get_cossin(limbs[limb][0])
-            error += min(abs(a_cos - p_cos), abs(a_sin - p_sin)) * limbs[limb][1]
+            #error += min(abs(a_cos - p_cos), abs(a_sin - p_sin)) * limbs[limb][1]
+            angle = abs(math.degrees(math.acos(a_cos) - math.acos(p_cos)))
+            even = " "
+            if angle < 10:
+                even = "  "
+            elif angle >= 100:
+                even = ""
+            output += f"{limb}: {int(angle)}{even} | "
+            error += angle*limbs[limb][1]
             sum += limbs[limb][1]# update total weight
-
+        
+        output = f"{int(self.displayer_timestamp*1000)}ms, Res (deg): | {output}"
         error = error/sum#adjust error for weight
         #print(a_cos, p_cos)
         #print(error_rignt_arm)
-        print(error)
-        return error_rignt_arm#lets plot it and see if it makes sense
+        #print(error)
+        return error, output#lets plot it and see if it makes sense
 
 
 # def dance(data_path, dance_path):
