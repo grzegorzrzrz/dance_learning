@@ -1,16 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Webcam Stream</title>
+    <title>Dance Learning Application</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='background.css') }}">
     <style>
     #menu-button {
         z-index: 3;
     }
+
+    .move_prompt {
+      position: absolute;
+      bottom: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 52px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 2px 2px 4px rgba(99, 9, 117, 0.5);
+      opacity: 0;
+      transition: opacity 1.5s ease;
+      z-index: 4;
+    }
+
+    #gradient-background {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(30deg, #b193be, #630975);
+      background-size: 400% 400%;
+      animation: gradientAnimation 12s linear infinite paused;
+    }
+
+
+    @keyframes gradientAnimation {
+      0% {
+        background-position: 100% 0%;
+      }
+      50% {
+        background-position: 0% 100%;
+      }
+      100% {
+        background-position: 100% 0%;
+      }
+    }
     </style>
 </head>
 <body>
+    <div id="gradient-background"></div>
     <div class="video_container">
         <div class="webcam_container">
             <img id="webcam_stream" height="300">
@@ -21,7 +57,7 @@
                 <source src="" type="video/mp4">
             </video>
         </div>
-        <div class="close-range-indicator" id="indicator"></div>
+        <div class="move_prompt" id="indicator"></div>
         <button id="menu-button">Menu</button>
     </div>
 
@@ -44,6 +80,49 @@
         imgElement.src = streamUrl;
         const eventSource = new EventSource('/point_stream');
         const clickedItem = localStorage.getItem('clickedItem');
+        const movePrompt = document.getElementById('indicator');
+
+function showMovePrompt(message) {
+  movePrompt.textContent = message;
+  movePrompt.style.opacity = 1;
+
+  // Hide the move prompt after 1 second
+  setTimeout(() => {
+    movePrompt.style.opacity = 0;
+  }, 1000);
+}
+
+let animationDuration = 20;
+  let realAnimationDuration = 20;
+
+  function moveColorUp() {
+      animationDuration -= 4;
+      realAnimationDuration -= 4;
+      realAnimationDuration = Math.max(realAnimationDuration, 0);
+      animationDuration = Math.max(animationDuration, 3);
+
+      const gradientBackground = document.getElementById('gradient-background');
+      gradientBackground.style.animation = `gradientAnimation ${animationDuration}s linear infinite`;
+  }
+
+  function moveColorDown() {
+      animationDuration += 4;
+      realAnimationDuration += 4;
+      realAnimationDuration = Math.min(realAnimationDuration, 24);
+      animationDuration = Math.min(animationDuration, 20);
+
+      const gradientBackground = document.getElementById('gradient-background');
+      gradientBackground.style.animation = `gradientAnimation ${animationDuration}s linear infinite`;
+      if (realAnimationDuration > 20) {
+      gradientBackground.style.animationPlayState = 'paused';
+    } else {
+      gradientBackground.style.animationPlayState = 'running';
+    }
+  }
+
+
+
+
 
 if (clickedItem) {
     // Set the video source based on the clicked item
@@ -90,22 +169,27 @@ if (clickedItem) {
         function updateIndicator(moveQuality) {
             if (moveQuality === 'good') {
                 goodMoves++;
-                indicator.style.backgroundColor = 'green';
+                // Example usage:
+showMovePrompt('Good!');
+moveColorUp();
             } else if (moveQuality === 'excellent') {
                 excellentMoves++;
-                indicator.style.backgroundColor = '#02f74c';
+                // Example usage:
+showMovePrompt('Excellent!');
+moveColorUp();
             } else if (moveQuality === 'bad') {
-                indicator.style.backgroundColor = 'red';
                 badMoves++;
+                moveColorUp();
+showMovePrompt('Ok!');
             } else {
-                indicator.style.backgroundColor = 'transparent'; // Default
             }
-
+/*
             // Trigger the fade-out effect
             indicator.style.opacity = 1;
             setTimeout(() => {
                 indicator.style.opacity = 0;
             }, 1000); // Adjust the delay (in milliseconds) as needed
+            */
         }
 
         videoElement.addEventListener('ended', () => {
@@ -119,6 +203,8 @@ if (clickedItem) {
         setTimeout( () =>{
             // Hide the video and show the finishing screen
             videoElement.style.display = 'none';
+            const gradientBackground = document.getElementById('gradient-background');
+            gradientBackground.style.display = 'none';
             const finishingScreen = document.getElementById('finishing-screen');
             finishingScreen.style.display = 'flex';
             imgElement.style.display = "none";
