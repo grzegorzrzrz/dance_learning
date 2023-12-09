@@ -2,13 +2,15 @@ from skeleton import Skeleton
 from typing import List
 from pose_estimation import estaminate_from_frame, create_skeleton_from_raw_pose_landmarks, reverse_dictionary
 from data_writer import write_data_to_csv_file
-from constants import NODES_NAME, SKELETON_FILE, DEFAULT_PROJECTION
+from constants import NODES_NAME, SKELETON_FILE, DEFAULT_PROJECTION, ACTUAL_DANCE_DATA_PATH
+from datetime import datetime
 import cv2
 import csv
 import math
 import time
 import numpy
 import matplotlib.pyplot as plt
+import os
 
 class Dance:
     def __init__(self, skeleton_table: List[Skeleton], name="") -> None:
@@ -51,7 +53,7 @@ class Dance:
 
 
 class DanceManager:
-    def __init__(self, dance_data_path: Dance, camera: cv2.VideoCapture) -> None:
+    def __init__(self, camera: cv2.VideoCapture) -> None:
         """A class which main purpose is to comepare dance from dance_data_path
         to a data gathered by the camera.
 
@@ -60,12 +62,11 @@ class DanceManager:
             camera (cv2.VideoCapture): Object representing camera, from which we can get live video with dance.
         """
 
-        self._dance_data_path = dance_data_path
-        self._pattern_dance = create_dance_from_data_file(dance_data_path)
         self._actual_dance = Dance([])
         self._camera = camera
         self._displayer_timestamp = 0
         self._is_video_being_played = False
+        self._is_camera_checked = False
 
     @property
     def pattern_dance(self) -> Dance:
@@ -99,20 +100,49 @@ class DanceManager:
         """
         return self._is_video_being_played
 
+    @property
+    def is_camera_checked(self):
+        return self._is_camera_checked
+
     def set_flag_is_video_being_played(self, value: bool):
         self._is_video_being_played = value
+
+    def set_flag_is_camera_checked(self, value: bool):
+        self._is_camera_checked = value
 
     def set_displayer_timestamp(self, value: float):
         self._displayer_timestamp = value
 
-    def compare_dances(self, dimension = DEFAULT_PROJECTION):
+    def check_camera(self, checking_time):
+        time_start = time.time()
+        current_time = time.time()
+        while current_time < time_start + checking_time:
+            ret, frame = self.camera.read()
+            if not ret:
+                #Singal that camera could not be found
+                time_start = time.time()
+            imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            result = estaminate_from_frame(imgRGB)
+            skeleton = create_skeleton_from_raw_pose_landmarks(result.pose_world_landmarks, self.displayer_timestamp, DEFAULT_PROJECTION)
+            if not skeleton:
+                #Singal that person could not be found on camera
+                time_start = time.time()
+            current_time = time.time()
+
+        self.set_flag_is_camera_checked(True)
+
+
+    def compare_dances(self, dance_data_path: str, save_actual_dance = True, dimension = DEFAULT_PROJECTION):
         """A method, which starts two treads, one from displaying viedo, second for gathering data from camera
         and continuously compares dances while viedo is being played.
         """
+
+        self._dance_data_path = dance_data_path
+        self._pattern_dance = create_dance_from_data_file(dance_data_path)
         self._is_video_being_played = True
         start_time = time.time()
         video_length = self.pattern_dance.get_last_skeleton().timestamp
-        self._actual_dance = Dance([])
+        self._actual_dance = Dance([], name=self.pattern_dance.name)
         self.set_displayer_timestamp(0)
 
         while self._is_video_being_played and self.displayer_timestamp < video_length:
@@ -128,9 +158,14 @@ class DanceManager:
                 #Something is wrong with camera
                 break
 
-    def save_actual_dance(self, file_name):
+        if save_actual_dance:
+            self.save_actual_dance()
+
+    def save_actual_dance(self, file_name=None):
         """Sace dance form camera as a csv file named file_name.
         """
+        if not file_name:
+            file_name = f"{ACTUAL_DANCE_DATA_PATH}/{add_current_timestamp_to_filename(self.pattern_dance.name)}.csv"
         write_data_to_csv_file(self.actual_dance, file_name, SKELETON_FILE)
 
 
@@ -169,6 +204,20 @@ class DanceManager:
 
         print(f"{last_frame.timestamp}: {error}")
 
+def get_dance_name_from_path(path: str):
+    file_name = os.path.basename(path)
+    file_name = file_name.split(".")[0]
+    return file_name
+
+def add_current_timestamp_to_filename(filename):
+    now = datetime.now()
+    datetime_format = "%Y-%m-%d_%H-%M-%S"
+    datetime_text = now.strftime(datetime_format)
+    new_filename = f"{filename}_{datetime_text}"
+
+    return new_filename
+
+
 def create_dance_from_data_file(data_file):
 
     nodes_name_dict = reverse_dictionary(NODES_NAME)
@@ -198,7 +247,7 @@ def create_dance_from_data_file(data_file):
                 z = line[raw_headlines[3*node + 3]]
                 current_raw_skeleton.append([id, x, y, z])
             skeleton_list.append(Skeleton(current_raw_skeleton, timestamp))
-    return Dance(skeleton_list)
+    return Dance(skeleton_list, name=get_dance_name_from_path(data_file))
 
 
 def get_dance_data_from_video(video_path, dimension = DEFAULT_PROJECTION):
@@ -211,7 +260,7 @@ def get_dance_data_from_video(video_path, dimension = DEFAULT_PROJECTION):
     while True:
         success, img = cap.read()
         if not success:
-            return Dance(data)
+            return Dance(data, name=get_dance_name_from_path(video_path))
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         results = estaminate_from_frame(imgRGB)
         timestamp = current_frame / fps

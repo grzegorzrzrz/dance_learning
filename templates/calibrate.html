@@ -2,39 +2,77 @@
 <html>
 <head>
     <title>Dance learning</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: black;
-            color: white;
-            font-family: Arial, sans-serif;
+    <link rel="stylesheet" href="{{ url_for('static', filename='background.css') }}">
+<style>
+body {
+    flex-direction: column;
+}
+
+#menu-button {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            display: inline-block;
+            background-color: #fff;
+            color: #630975;
+            padding: 20px 40px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+
         }
 
-        #camera_prompt {
-            font-size: 24px;
-            text-align: center;
-            margin-bottom: 20px;
+        #menu-button:hover {
+            transform: scale(1.1);
         }
-    </style>
+</style>
 </head>
 <body>
-    <div id="camera_prompt">Please ensure your entire body is visible in the camera frame</div>
+    <h1>Please ensure your entire body is visible in the camera frame</h1>
     <div id="webcam_container">
         <img id="webcam_stream">
     </div>
+    <button id="menu-button">Menu</button>
     <script>
+        const eventSource = new EventSource('/calibration_ok_message');
         const imgElement = document.getElementById('webcam_stream');
         const streamUrl = '/webcam_stream';
         imgElement.src = streamUrl;
+
+
+        fetch('/calibration_message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: '!CALIBRATION_START' }),
+        })
+/*
+
+        // This is simulating that calibration is okay after few seconds
         setTimeout(() => {
             window.location.href = 'dance';
-        }, 5000);
+        }, 10000);
+
+*/
+        eventSource.onmessage = function(event) {
+        // Update the message on the HTML page
+        console.log(event.data);
+        if (event.data == "!CALIBRATION_OK")
+        {
+            window.location.href = 'dance';
+        }
+        updateIndicator(event.data);
+    };
+
+        eventSource.onerror = function(event) {
+        // Handle errors
+        console.error("Error with SSE:", event);
+        eventSource.close();
+    };
     </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

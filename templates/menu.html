@@ -4,43 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dance Learning Application</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='background.css') }}">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
-            background: linear-gradient(30deg, #b193be, #630975);
-            background-size: 400% 400%;
-            animation: gradientAnimation 6s linear infinite;
-        }
-
-        @keyframes gradientAnimation {
-            0% {
-                background-position: 100% 0%;
-            }
-            50% {
-                background-position: 0% 100%;
-            }
-            100% {
-                background-position: 100% 0%;
-            }
         }
 
         .title {
             text-align: center;
-        }
-
-        h1 {
-            font-size: 36px;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
         }
 
         .miniature-container {
@@ -55,14 +29,16 @@
             cursor: pointer;
             transition: transform 0.3s;
             position: relative;
+            perspective: 1000px; /* Adding perspective for depth effect */
         }
 
         .miniature:hover {
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
 
         .miniature img {
             max-width: 100%;
+
         }
 
         .miniature video {
@@ -71,6 +47,9 @@
             top: 0;
             left: 0;
             display: none;
+            transform: translateZ(20px); /* Move the video slightly forward for depth */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Add shadow background */
+            border-radius: 10px; /* Optional: Add rounded corners */
         }
 
         .miniature:hover video {
@@ -79,8 +58,11 @@
 
         .miniature-title {
             font-size: 16px;
+            font-weight: bold; /* Make it bold */
             color: #fff;
             margin-top: 10px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Add text shadow for a cooler effect */
         }
     </style>
 </head>
@@ -89,35 +71,54 @@
         <h1>Choose the dance!</h1>
     </div>
     <div class="miniature-container">
-        <a href="calibrate"> <!-- Link to another webpage -->
+        <span id="dance_1" onclick="transitionToPage('/calibrate')">
             <div class="miniature" onmouseover="startVideo('video1');" onmouseout="stopVideo('video1')">
-                <video id="video1" width="320">
-                    <source src="{{ url_for('static', filename='dance.mp4') }}" type="video/mp4">
+                <video id="video1" width="360">
+                    <source src="{{ url_for('static', filename='/data/dance_videos/dance_1.mp4') }}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
-                <img src="{{ url_for('static', filename='dance_preview.png') }}" width="320" alt="Dance 1">
-                <p class="miniature-title">Feel Special - TWICE</p>
+                <img src="{{ url_for('static', filename='/data/dance_videos/dance_preview_1.png') }}" width="360" alt="Dance 1">
+                <p class="miniature-title">Dance 1</p>
             </div>
-        </a>
+        </span>
 
-        <a href="#" onclick="startApplication(); return false;">
-            <div class="miniature">
-                <video width="320" height="240" controls onmouseover="resetVideo(this)">
-                    <source src="dance_video_2.mp4" type="video/mp4">
+
+        <span id="dance_2" onclick="transitionToPage('/calibrate')">
+            <div class="miniature" onmouseover="startVideo('video2');" onmouseout="stopVideo('video2')">
+                <video id="video2" width="360">
+                    <source src="{{ url_for('static', filename='/data/dance_videos/dance_2.mp4') }}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
-                <img src="dance_image_2.jpg" alt="Dance 2">
+                <img src="{{ url_for('static', filename='/data/dance_videos/dance_preview_2.png') }}" width="360" alt="Dance 2">
                 <p class="miniature-title">Dance 2</p>
             </div>
-        </a>
-        <!-- Add more dance miniatures as needed -->
+        </span>
+
+        <span id="dance_3" onclick="transitionToPage('/calibrate')">
+            <div class="miniature" onmouseover="startVideo('video3');" onmouseout="stopVideo('video3')">
+                <video id="video3" width="360">
+                    <source src="{{ url_for('static', filename='/data/dance_videos/dance_3.mp4') }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <img src="{{ url_for('static', filename='/data/dance_videos/dance_preview_3.png') }}" width="360" alt="Dance 3">
+                <p class="miniature-title">Dance 3</p>
+            </div>
+        </span>
+
+        <span id="dance_4" onclick="transitionToPage('/calibrate')">
+            <div class="miniature" onmouseover="startVideo('video4');" onmouseout="stopVideo('video4')">
+                <video id="video4" width="360">
+                    <source src="{{ url_for('static', filename='/data/dance_videos/dance_4.mp4') }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <img src="{{ url_for('static', filename='/data/dance_videos/dance_preview_4.png') }}" width="360" alt="Dance 4">
+                <p class="miniature-title">Dance 4</p>
+            </div>
+        </span>
     </div>
 
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script>
-        function startApplication() {
-            window.location.href = '/menu';
-        }
-
         function resetVideo(video) {
             video.currentTime = 0;
         }
@@ -132,6 +133,67 @@
             const video = document.getElementById(id);
             video.pause();
         }
+
+        document.getElementById('dance_1').addEventListener('click', function() {
+        localStorage.setItem('clickedItem', 'dance_1');
+
+        fetch('/get_dance_name', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        clickedItem: localStorage.getItem('clickedItem'),
+    }),
+});
+
+
+
+    });
+
+document.getElementById('dance_2').addEventListener('click', function() {
+        localStorage.setItem('clickedItem', 'dance_2');
+
+        fetch('/get_dance_name', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        clickedItem: localStorage.getItem('clickedItem'),
+    }),
+});
+});
+
+document.getElementById('dance_3').addEventListener('click', function() {
+        localStorage.setItem('clickedItem', 'dance_3');
+
+        fetch('/get_dance_name', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        clickedItem: localStorage.getItem('clickedItem'),
+    }),
+});
+});
+
+document.getElementById('dance_4').addEventListener('click', function() {
+        localStorage.setItem('clickedItem', 'dance_4');
+
+        fetch('/get_dance_name', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        clickedItem: localStorage.getItem('clickedItem'),
+    }),
+});
+});
+
     </script>
+
 </body>
 </html>

@@ -26,7 +26,10 @@ def create_skeleton_from_raw_pose_landmarks(pose_landmarks, timestamp, dimension
     if pose_landmarks:
         current_frame_data = []
         for id, lm in enumerate(pose_landmarks[0]):
-            current_frame_data.append([id, lm.x, lm.y, lm.z])
+            if dimension == "3D":
+                current_frame_data.append([id, lm.x, lm.y, lm.z])
+            elif dimension == "2D":
+                current_frame_data.append([id, lm.x, lm.y, 0])
         left_anchor = current_frame_data[LEFT_ANCHOR_CREATOR_NODE]
         right_anchor = current_frame_data[RIGHT_ANCHOR_CREATOR_NODE]
 

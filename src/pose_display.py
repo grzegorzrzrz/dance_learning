@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.widgets import Slider
 from pose_estimation import *
-import numpy as np
 from dance import create_dance_from_data_file, Dance
 
 
@@ -69,7 +68,7 @@ def plot_data_from_2d_skeleton(dance_file):
 
     plt.show()
 
-def plot_ineractive_double_dance_2d(pattern_dance_path, actual_dance_path):
+def plot_ineractive_double_dance_2d(pattern_dance_path, actual_dance_path=None):
 
     def get_data_to_plot(dance: Dance, timestamp):
         x_data = []
@@ -93,33 +92,38 @@ def plot_ineractive_double_dance_2d(pattern_dance_path, actual_dance_path):
     ax.set_ylim(-4.5, 4.5)
     axtime = fig.add_axes([0.25, 0.93, 0.65, 0.03])
     pattern_dance = create_dance_from_data_file(pattern_dance_path)
-    actual_dance = create_dance_from_data_file(actual_dance_path)
+    if actual_dance_path:
+        actual_dance = create_dance_from_data_file(actual_dance_path)
     max_time = pattern_dance.get_last_skeleton().timestamp
 
     time_slider = Slider(axtime, label="timestamp",
                          valmin=0, valmax=max_time, valinit=0)
 
     patt_x, patt_y, patt_id = get_data_to_plot(pattern_dance, 0)
-    act_x, act_y, act_id = get_data_to_plot(actual_dance, 0)
+    if actual_dance_path:
+        act_x, act_y, act_id = get_data_to_plot(actual_dance, 0)
     patt_texts = []
     act_texts = []
     for i in range(len(patt_x)):
         patt_texts.append(ax.text(patt_x[i], patt_y[i], patt_id[i], c="b"))
-        act_texts.append(ax.text(act_x[i], act_y[i], act_id[i], c="r"))
+        if actual_dance_path:
+            act_texts.append(ax.text(act_x[i], act_y[i], act_id[i], c="r"))
 
     ax.set_title(f"Time: 0")
 
     def update(val):
         timestamp = time_slider.val
         patt_x, patt_y, patt_id = get_data_to_plot(pattern_dance, timestamp)
-        act_x, act_y, act_id = get_data_to_plot(actual_dance, timestamp)
+        if actual_dance_path:
+            act_x, act_y, act_id = get_data_to_plot(actual_dance, timestamp)
         for i in range(len(patt_x)):
             patt_texts[i].set_x(patt_x[i])
             patt_texts[i].set_y(patt_y[i])
             patt_texts[i].set_text(patt_id[i])
-            act_texts[i].set_x(act_x[i])
-            act_texts[i].set_y(act_y[i])
-            act_texts[i].set_text(act_id[i])
+            if actual_dance_path:
+                act_texts[i].set_x(act_x[i])
+                act_texts[i].set_y(act_y[i])
+                act_texts[i].set_text(act_id[i])
 
         ax.set_title(f"Time: {timestamp}")
 
@@ -137,5 +141,3 @@ def compare_dances_from_file(pattern_dance_path, actual_dance_path):
                                   len(pattern_dance.skeleton_table), fargs=([ax, pattern_dance, actual_dance]), interval=17)
 
     plt.show()
-
-plot_ineractive_double_dance_2d("static/pattern.csv", "static/actual.csv")

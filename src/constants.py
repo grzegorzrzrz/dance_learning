@@ -1,6 +1,14 @@
 LEFT_ANCHOR_CREATOR_NODE = 23
 RIGHT_ANCHOR_CREATOR_NODE = 24
 MODEL_PATH = "src/pose_landmarker_heavy.task"
+SKELETON_FILE = "src/skeleton.csv"
+DEFAULT_PROJECTION = "2D"
+DEFAULT_CHECKING_CAMERA_TIME = 3
+
+DANCE_VIDEOS_PATH = "static/data/dance_videos"
+PATTERN_DANCE_DATA_PATH = "static/data/pattern_dance_data"
+ACTUAL_DANCE_DATA_PATH = "static/data/actual_dance_data"
+
 NODES_NAME = {
 
     -1: "anchor",
@@ -41,6 +49,3 @@ NODES_NAME = {
 }
 
 N_RAW_NODES = len(NODES_NAME)
-
-SKELETON_FILE = "src/skeleton.csv"
-DEFAULT_PROJECTION = "2D"

@@ -1,14 +1,15 @@
-from flask import Flask, Response, render_template, request, jsonify, stream_with_context
+from flask import Flask, Response, render_template, request, jsonify, stream_with_context, send_from_directory
 import cv2
 import random, time
+import sys
+sys.path.append("src")
 from src.dance import DanceManager
 app = Flask(__name__)
 
-pattern_dance_path = "static/pattern.csv" #@TODO Remove it
-
+pattern_dance_path = None
 video_capture = cv2.VideoCapture(0)  # 0 for default camera (you can specify other camera indexes or video files)
 
-dance_manager = DanceManager(pattern_dance_path, video_capture)
+dance_manager = DanceManager(video_capture)
 
 def generate_frames():
     while True:
@@ -46,13 +47,22 @@ def video_started():
     data = request.get_json()
     message = data.get('message', 'No message received')
     if message == "!VIDEO_START":
-        dance_manager.compare_dances()
+        dance_manager.compare_dances(pattern_dance_path)
     if message == "!VIDEO_END":
         dance_manager.set_flag_is_video_being_played(False)
-        dance_manager.save_actual_dance("DEBUG.csv")
     print(f"Received message from the client: {message}")
     # Perform any additional actions you need here
     return jsonify(success=True)
+
+@app.route('/get_dance_name', methods=['POST'])
+def get_dance_name():
+    data = request.get_json()
+    clicked_item = data.get('clickedItem')
+    global pattern_dance_path
+    pattern_dance_path = f"static/data/pattern_dance_data/{clicked_item}.csv"
+    return jsonify(success=True)
+
+
 
 def generate_messages():
     for _ in range (7):
@@ -70,9 +80,10 @@ def stream():
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/calibration_message')
-def calibration():
-    # if calibration_check(): or something like that
+@app.route('/calibration_ok_message')
+def calibration_ok_msg():
+    dance_manager.set_flag_is_camera_checked(False)
+    dance_manager.check_camera(3)
     return Response(f"data: !CALIBRATION_OK\n\n", content_type='text/event-stream')
 
 if __name__ == '__main__':
