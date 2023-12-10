@@ -305,6 +305,7 @@ class MockDanceManager(DanceManager):
                 res = self.alt_compare_recent_dance(delay)
                 if res: 
                     score,output = res
+                    #print(res)
                     #results.append(score)
                     if score != None:
                         results.append((score,output))
@@ -312,10 +313,6 @@ class MockDanceManager(DanceManager):
             if not results:
                 print("check2")
 
-            # for a in results:
-            #     print(f"{type(a)} -> {a}")
-            #print(min(results) - results[0])
-            #print(results)
             values.append(min(results))
             inv_values.append(max(results))
             base_values.append(results[0])
@@ -326,28 +323,27 @@ class MockDanceManager(DanceManager):
             if self._displayer_timestamp > dance_time:
                 self._is_video_being_played = False
         
-        #print(values)
-        #print(len(values), len(t))
+        #values is a list of tuples first one being score second one being output
+        #so now since we dont need it we need to strip the second element form the tupels in the list
+        values = getNthTupleElementFromList(values, 0)
+        base_values = getNthTupleElementFromList(base_values, 0)
+        inv_values = getNthTupleElementFromList(inv_values, 0)
 
-        for v in values:
-            #print(f"{type(v)}; ", end= '')
-            if isinstance(v, int):
-                print("hi")
-        print(f"size of values is {len(values)}")
         avg_value = sum(values)/len(values)
         inv_avg_value = sum(inv_values)/len(inv_values)
         avg_base = sum(base_values)/len(base_values)
 
         print(f"average score is: {avg_value}, average worst score is: {inv_avg_value}, base score is {avg_base}")
+        print(f"your score is: {getGrade(avg_value)}")
 
-        if len(values) == len(inv_values) == len(t):
+        if len(values) == len(inv_values) == len(base_values) == len(t):
             plt.plot(t,inv_values, linewidth = 1, label = "worst")
             plt.plot(t,base_values, linewidth = 1, label = "base")
             plt.plot(t,values, linewidth = 1,label = "best")
             plt.legend()
             plt.show()
         else:
-            print("Pyplot lists not matching")
+            print(f"Pyplot lists not matching {len(values)}, {len(inv_values)}, {len(base_values)}, {len(t)}")
         #PLOT THE VALUES
 
 
@@ -433,7 +429,28 @@ class MockDanceManager(DanceManager):
         #print(error)
         return error, output#lets plot it and see if it makes sense
 
+def getNthTupleElementFromList(L: list, n:int):
+    #when u have a list of tuples this function will return only the n-th element of each tuple as a list
+    R = []
+    for element in L:
+        R.append(element[n])
+    return R
 
+def getGrade(score: int):
+    #returns a string name for a score you are given
+    #fell free to adjust
+    scoring_system = {
+        #!keys have to be increasing and in [0,180]
+        10: "very good",
+        30: "good",
+        50: "almost",
+        100: "are u sure you are dancing?",
+        180: "u are not good at this"
+    }
+    for limit, result in scoring_system.items():
+        if score <= limit:
+            return result + ", " + str(int((score/180)*100)) + "% pose difference"
+    return "ERROR score so terrible it was out of bounds"
 # def dance(data_path, dance_path):
 #     dance = create_dance_from_data_file(data_path)
 #     dance_manager = DanceManager(dance_path, dance)
