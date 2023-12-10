@@ -299,14 +299,21 @@ class MockDanceManager(DanceManager):
             depth = 0.5
             n = 10
             radius = numpy.linspace(0,-depth,n)
-            results = [[]]
+            results = []
 
             for delay in radius:
-                score,output = self.alt_compare_recent_dance(delay)
-                #results.append(score)
-                if score != None:
-                    results.append((score,output))
+                res = self.alt_compare_recent_dance(delay)
+                if res: 
+                    score,output = res
+                    #results.append(score)
+                    if score != None:
+                        results.append((score,output))
 
+            if not results:
+                print("check2")
+
+            # for a in results:
+            #     print(f"{type(a)} -> {a}")
             #print(min(results) - results[0])
             #print(results)
             values.append(min(results))
@@ -322,6 +329,11 @@ class MockDanceManager(DanceManager):
         #print(values)
         #print(len(values), len(t))
 
+        for v in values:
+            #print(f"{type(v)}; ", end= '')
+            if isinstance(v, int):
+                print("hi")
+        print(f"size of values is {len(values)}")
         avg_value = sum(values)/len(values)
         inv_avg_value = sum(inv_values)/len(inv_values)
         avg_base = sum(base_values)/len(base_values)
@@ -371,7 +383,8 @@ class MockDanceManager(DanceManager):
         pattern_frame = self.pattern_dance.get_skeleton_by_timestamp(last_frame.timestamp - delay)#what if timestam is negative?
 
         if not last_frame or not pattern_frame:# triggers when there is no dance data
-            return
+            print("no last frame or pattern frame")
+            return#returns a none which causes issues in alt_dance_manager
 
         # if isinstance(EmptySkeleton, )
         #last_frame is the skeleton of the user
