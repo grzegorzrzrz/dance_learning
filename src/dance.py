@@ -8,6 +8,8 @@ import cv2
 import csv
 import math
 import time
+import numpy
+import matplotlib.pyplot as plt
 import os
 
 class Dance:
@@ -288,11 +290,63 @@ class MockDanceManager(DanceManager):
         time_start = time.time()
         dance_time = self.pattern_dance.get_last_skeleton().timestamp
 
+        values = []
+        inv_values =[]
+        base_values = []
+        t = []
+
         while self._is_video_being_played:
-            self.alt_compare_recent_dance(0)
+            depth = 0.5
+            n = 10
+            radius = numpy.linspace(0,-depth,n)
+            results = []
+
+            for delay in radius:
+                res = self.alt_compare_recent_dance(delay)
+                if res: 
+                    score,output = res
+                    #print(res)
+                    #results.append(score)
+                    if score != None:
+                        results.append((score,output))
+
+            if not results:
+                print("check2")
+
+            values.append(min(results))
+            inv_values.append(max(results))
+            base_values.append(results[0])
+
+            t.append(self._displayer_timestamp)
+            #print(f"time: {self._displayer_timestamp}, score:{min(results)}, inv_score{max(results)}")
             self._displayer_timestamp = time.time() - time_start
             if self._displayer_timestamp > dance_time:
                 self._is_video_being_played = False
+        
+        #values is a list of tuples first one being score second one being output
+        #so now since we dont need it we need to strip the second element form the tupels in the list
+        values = getNthTupleElementFromList(values, 0)
+        base_values = getNthTupleElementFromList(base_values, 0)
+        inv_values = getNthTupleElementFromList(inv_values, 0)
+
+        avg_value = sum(values)/len(values)
+        inv_avg_value = sum(inv_values)/len(inv_values)
+        avg_base = sum(base_values)/len(base_values)
+
+        print(f"average score is: {avg_value}, average worst score is: {inv_avg_value}, base score is {avg_base}")
+        print(f"your score is: {getGrade(avg_value)}")
+
+        if len(values) == len(inv_values) == len(base_values) == len(t):
+            plt.plot(t,inv_values, linewidth = 1, label = "worst")
+            plt.plot(t,base_values, linewidth = 1, label = "base")
+            plt.plot(t,values, linewidth = 1,label = "best")
+            plt.legend()
+            plt.show()
+        else:
+            print(f"Pyplot lists not matching {len(values)}, {len(inv_values)}, {len(base_values)}, {len(t)}")
+        #PLOT THE VALUES
+
+
 
     def _compare_recent_dance(self):
         """
@@ -325,7 +379,8 @@ class MockDanceManager(DanceManager):
         pattern_frame = self.pattern_dance.get_skeleton_by_timestamp(last_frame.timestamp - delay)#what if timestam is negative?
 
         if not last_frame or not pattern_frame:# triggers when there is no dance data
-            return
+            print("no last frame or pattern frame")
+            return#returns a none which causes issues in alt_dance_manager
 
         # if isinstance(EmptySkeleton, )
         #last_frame is the skeleton of the user
@@ -337,6 +392,7 @@ class MockDanceManager(DanceManager):
             "right_hand": [[16,12,24], 1],
             "left_arm":   [[13,11,23], 0.7],
             "left_hand":  [[15,11,23], 1],
+
             "right_leg":  [[23,24,26], 0.2],
             "right_foot": [[23,24,28], 0.2],
             "left_leg":   [[24,23,25], 0.2],
@@ -351,19 +407,50 @@ class MockDanceManager(DanceManager):
         #actual error calculation for all limbs
         error = 0
         sum = 0
+        output = ""
         for limb in limbs:
             a_cos, a_sin = last_frame.get_cossin(limbs[limb][0])
             p_cos, p_sin = pattern_frame.get_cossin(limbs[limb][0])
-            error += min(abs(a_cos - p_cos), abs(a_sin - p_sin)) * limbs[limb][1]
+            #error += min(abs(a_cos - p_cos), abs(a_sin - p_sin)) * limbs[limb][1]
+            angle = abs(math.degrees(math.acos(a_cos) - math.acos(p_cos)))
+            even = " "
+            if angle < 10:
+                even = "  "
+            elif angle >= 100:
+                even = ""
+            output += f"{limb}: {int(angle)}{even} | "
+            error += angle*limbs[limb][1]
             sum += limbs[limb][1]# update total weight
-
+        
+        output = f"{int(self.displayer_timestamp*1000)}ms, Res (deg): | {output}"
         error = error/sum#adjust error for weight
         #print(a_cos, p_cos)
         #print(error_rignt_arm)
-        print(error)
-        return error_rignt_arm#lets plot it and see if it makes sense
+        #print(error)
+        return error, output#lets plot it and see if it makes sense
 
+def getNthTupleElementFromList(L: list, n:int):
+    #when u have a list of tuples this function will return only the n-th element of each tuple as a list
+    R = []
+    for element in L:
+        R.append(element[n])
+    return R
 
+def getGrade(score: int):
+    #returns a string name for a score you are given
+    #fell free to adjust
+    scoring_system = {
+        #!keys have to be increasing and in [0,180]
+        10: "very good",
+        30: "good",
+        50: "almost",
+        100: "are u sure you are dancing?",
+        180: "u are not good at this"
+    }
+    for limit, result in scoring_system.items():
+        if score <= limit:
+            return result + ", " + str(int((score/180)*100)) + "% pose difference"
+    return "ERROR score so terrible it was out of bounds"
 # def dance(data_path, dance_path):
 #     dance = create_dance_from_data_file(data_path)
 #     dance_manager = DanceManager(dance_path, dance)
