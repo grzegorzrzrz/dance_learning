@@ -345,6 +345,71 @@ class MockDanceManager(DanceManager):
         else:
             print(f"Pyplot lists not matching {len(values)}, {len(inv_values)}, {len(base_values)}, {len(t)}")
         #PLOT THE VALUES
+    
+    def compare_dances_live(self, timestep: float):
+        self._is_video_being_played = True
+        time_start = time.time()
+        dance_time = self.pattern_dance.get_last_skeleton().timestamp
+
+        values = []
+        inv_values =[]
+        base_values = []
+        t = []
+        t_0 = time_start
+        value_record = []
+
+        while self._is_video_being_played:
+            depth = 0.5
+            n = 10
+            radius = numpy.linspace(0,-depth,n)
+            results = []
+
+            for delay in radius:
+                res = self.alt_compare_recent_dance(delay)
+                if res: 
+                    score,output = res
+                    #print(res)
+                    #results.append(score)
+                    if score != None:
+                        results.append((score,output))
+
+            if not results:
+                print("check2")
+
+            values.append(min(results))
+            inv_values.append(max(results))
+            base_values.append(results[0])
+
+            t.append(self._displayer_timestamp)
+            #print(f"time: {self._displayer_timestamp}, score:{min(results)}, inv_score{max(results)}")
+            #print(f"{self.displayer_timestamp} t_0: {t_0}")
+            if (time.time() - t_0) >= timestep:#when we output the result
+                t_0 = time.time()
+                values = getNthTupleElementFromList(values, 0)
+                value_record.extend(values)
+                avg_value = sum(values)/len(values)
+                #report is what we want the user to see, here we print it
+                report = getGrade(avg_value)
+                print(report)
+
+                values.clear()
+
+
+
+            self._displayer_timestamp = time.time() - time_start
+            if self._displayer_timestamp > dance_time:
+                self._is_video_being_played = False
+            
+        #values is a list of tuples first one being score second one being output
+        #so now since we dont need it we need to strip the second element form the tupels in the list
+        # values = getNthTupleElementFromList(values, 0)
+        # base_values = getNthTupleElementFromList(base_values, 0)
+        # inv_values = getNthTupleElementFromList(inv_values, 0)
+
+        # avg_value = sum(values)/len(values)
+        # inv_avg_value = sum(inv_values)/len(inv_values)
+        # avg_base = sum(base_values)/len(base_values)
+        return
 
 
 
@@ -379,7 +444,7 @@ class MockDanceManager(DanceManager):
         pattern_frame = self.pattern_dance.get_skeleton_by_timestamp(last_frame.timestamp - delay)#what if timestam is negative?
 
         if not last_frame or not pattern_frame:# triggers when there is no dance data
-            print("no last frame or pattern frame")
+            #print("no last frame or pattern frame")
             return#returns a none which causes issues in alt_dance_manager
 
         # if isinstance(EmptySkeleton, )
