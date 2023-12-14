@@ -2,7 +2,7 @@ from skeleton import Skeleton
 from typing import List
 from pose_estimation import estaminate_from_frame, create_skeleton_from_raw_pose_landmarks, reverse_dictionary
 from data_writer import write_data_to_csv_file
-from constants import NODES_NAME, SKELETON_FILE, DEFAULT_PROJECTION, ACTUAL_DANCE_DATA_PATH
+from constants import NODES_NAME, SKELETON_FILE, DEFAULT_PROJECTION, ACTUAL_DANCE_DATA_PATH, DEFAULT_SCORING_TIMESTEP
 from datetime import datetime
 import cv2
 import csv
@@ -11,6 +11,8 @@ import time
 import numpy
 import matplotlib.pyplot as plt
 import os
+
+sse_messages = []
 
 class Dance:
     def __init__(self, skeleton_table: List[Skeleton], name="") -> None:
@@ -132,10 +134,11 @@ class DanceManager:
         self.set_flag_is_camera_checked(True)
 
 
-    def compare_dances(self, dance_data_path: str, save_actual_dance = True, dimension = DEFAULT_PROJECTION):
-        """A method, which starts two treads, one from displaying viedo, second for gathering data from camera
-        and continuously compares dances while viedo is being played.
+    def compare_dances(self, dance_data_path: str, timestep= DEFAULT_SCORING_TIMESTEP,
+                       save_actual_dance = True, dimension = DEFAULT_PROJECTION):
+        """A method, which continuously compares dances while viedo is being played.
         """
+        global sse_messages
 
         self._dance_data_path = dance_data_path
         self._pattern_dance = create_dance_from_data_file(dance_data_path)
@@ -145,6 +148,16 @@ class DanceManager:
         self._actual_dance = Dance([], name=self.pattern_dance.name)
         self.set_displayer_timestamp(0)
 
+        values = []
+        inv_values =[]
+        base_values = []
+        t = []
+        t_0 = start_time
+        value_record = []
+        depth = 0.5
+        n = 10
+        radius = numpy.linspace(0,-depth,n)
+
         while self._is_video_being_played and self.displayer_timestamp < video_length:
             ret, frame = self.camera.read()
             imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -152,7 +165,39 @@ class DanceManager:
             self.set_displayer_timestamp(time.time() - start_time)
             skeleton = create_skeleton_from_raw_pose_landmarks(result.pose_world_landmarks, self.displayer_timestamp, dimension)
             self.actual_dance.add_skeleton(skeleton)
-            self._compare_recent_dance()
+
+            results = []
+
+            for delay in radius:
+                res = self._compare_recent_dance(delay)
+                if res:
+                    score,output = res
+                    #print(res)
+                    #results.append(score)
+                    if score != None:
+                        results.append((score,output))
+
+            # if not results:
+            #     print("check2")
+
+            values.append(min(results))
+            inv_values.append(max(results))
+            base_values.append(results[0])
+
+            t.append(self._displayer_timestamp)
+            #print(f"time: {self._displayer_timestamp}, score:{min(results)}, inv_score{max(results)}")
+            #print(f"{self.displayer_timestamp} t_0: {t_0}")
+            if (time.time() - t_0) >= timestep:#when we output the result
+                t_0 = time.time()
+                values = getNthTupleElementFromList(values, 0)
+                value_record.extend(values)
+                avg_value = sum(values)/len(values)
+                # report is what we want the user to see, here we print it
+                # report = getGrade(avg_value)
+                sse_messages.append(avg_value)
+                # print(report)
+
+                values.clear()
 
             if not ret:
                 #Something is wrong with camera
@@ -179,30 +224,65 @@ class DanceManager:
     #         Defaults to DEFAULT_PROJECTION ("2D").
     #     """
 
-    def _compare_recent_dance(self):
+    def _compare_recent_dance(self, delay):
         """
         Get the comparison of recent dance, based on gathered data from camera and data about dance from viedo.
         """
-        last_frame = self.actual_dance.get_last_skeleton()
-        if not last_frame:
-            return
-        pattern_frame = self.pattern_dance.get_skeleton_by_timestamp(last_frame.timestamp)
+        last_frame = self.actual_dance.get_skeleton_by_timestamp(self.displayer_timestamp)  #Returns a Skeleton, which has the biggest timestamp from all Skeletons in this Dance. Returns None if there isn't any Skeleon in this list.
 
-        for lm in last_frame.landmarks():
-            landmark_id = lm.id
-            patt_lm = pattern_frame.get_landmark_by_id(landmark_id)
-            error = 0
-            if not lm:
-                #Camera could not find a person
-                pass
-            elif not patt_lm:
-                #Person could not be found in reference video
-                pass
-            else:
-                landmark_error = math.sqrt((lm.x - patt_lm.x)**2 + (lm.y - patt_lm.y)**2 + (lm.z - patt_lm.z)**2)
-                error += landmark_error
+        pattern_frame = self.pattern_dance.get_skeleton_by_timestamp(last_frame.timestamp - delay)#what if timestam is negative?
 
-        print(f"{last_frame.timestamp}: {error}")
+        if not last_frame or not pattern_frame:# triggers when there is no dance data
+            #print("no last frame or pattern frame")
+            return#returns a none which causes issues in alt_dance_manager
+
+        # if isinstance(EmptySkeleton, )
+        #last_frame is the skeleton of the user
+        #pattern_frame is the skeleton generated form the video for that time instance
+
+        limbs = {#orientation from their perspective
+            #key -> [points, weight(for cumulative error)]
+            "right_arm":  [[14,12,24], 0.7],
+            "right_hand": [[16,12,24], 1],
+            "left_arm":   [[13,11,23], 0.7],
+            "left_hand":  [[15,11,23], 1],
+
+            "right_leg":  [[23,24,26], 0.2],
+            "right_foot": [[23,24,28], 0.2],
+            "left_leg":   [[24,23,25], 0.2],
+            "left_foot":  [[24,23,27], 0.2]
+            }
+
+        #practice error calculation for one limb
+        a_cos, a_sin = last_frame.get_cossin(limbs["right_arm"][0])
+        p_cos, p_sin = pattern_frame.get_cossin(limbs["right_arm"][0])
+        error_rignt_arm = min(abs(a_cos - p_cos), abs(a_sin - p_sin))
+
+        #actual error calculation for all limbs
+        error = 0
+        sum = 0
+        output = ""
+        for limb in limbs:
+            a_cos, a_sin = last_frame.get_cossin(limbs[limb][0])
+            p_cos, p_sin = pattern_frame.get_cossin(limbs[limb][0])
+            #error += min(abs(a_cos - p_cos), abs(a_sin - p_sin)) * limbs[limb][1]
+            angle = abs(math.degrees(math.acos(a_cos) - math.acos(p_cos)))
+            even = " "
+            if angle < 10:
+                even = "  "
+            elif angle >= 100:
+                even = ""
+            output += f"{limb}: {int(angle)}{even} | "
+            error += angle*limbs[limb][1]
+            sum += limbs[limb][1]# update total weight
+
+        output = f"{int(self.displayer_timestamp*1000)}ms, Res (deg): | {output}"
+        error = error/sum#adjust error for weight
+        #print(a_cos, p_cos)
+        #print(error_rignt_arm)
+        #print(error)
+        return error, output#lets plot it and see if it makes sense
+
 
 def get_dance_name_from_path(path: str):
     file_name = os.path.basename(path)
@@ -268,236 +348,6 @@ def get_dance_data_from_video(video_path, dimension = DEFAULT_PROJECTION):
         data.append(skeleton)
         current_frame += 1
 
-class MockDanceManager(DanceManager):
-    def __init__(self, pattern_dance: str, actual_dance: Dance) -> None:
-        """Mock testing class for DanceManager.
-
-        Args:
-            pattern_dance (Dance): A Dance class object, which mocks data from video.
-            actual_dance (Dance): A Dance class object, which mocks data from camera.
-        """
-
-        self._dance_video_path = None
-        self._pattern_dance = pattern_dance
-        self._actual_dance = actual_dance
-        self._dance_displayer_thread = None
-        self._dance_data_getter_thread = None
-        self._displayer_timestamp = 0
-        self._is_video_being_played = False
-
-    def compare_dances(self):
-        self._is_video_being_played = True
-        time_start = time.time()
-        dance_time = self.pattern_dance.get_last_skeleton().timestamp
-
-        values = []
-        inv_values =[]
-        base_values = []
-        t = []
-
-        while self._is_video_being_played:
-            depth = 0.5
-            n = 10
-            radius = numpy.linspace(0,-depth,n)
-            results = []
-
-            for delay in radius:
-                res = self.alt_compare_recent_dance(delay)
-                if res: 
-                    score,output = res
-                    #print(res)
-                    #results.append(score)
-                    if score != None:
-                        results.append((score,output))
-
-            if not results:
-                print("check2")
-
-            values.append(min(results))
-            inv_values.append(max(results))
-            base_values.append(results[0])
-
-            t.append(self._displayer_timestamp)
-            #print(f"time: {self._displayer_timestamp}, score:{min(results)}, inv_score{max(results)}")
-            self._displayer_timestamp = time.time() - time_start
-            if self._displayer_timestamp > dance_time:
-                self._is_video_being_played = False
-        
-        #values is a list of tuples first one being score second one being output
-        #so now since we dont need it we need to strip the second element form the tupels in the list
-        values = getNthTupleElementFromList(values, 0)
-        base_values = getNthTupleElementFromList(base_values, 0)
-        inv_values = getNthTupleElementFromList(inv_values, 0)
-
-        avg_value = sum(values)/len(values)
-        inv_avg_value = sum(inv_values)/len(inv_values)
-        avg_base = sum(base_values)/len(base_values)
-
-        print(f"average score is: {avg_value}, average worst score is: {inv_avg_value}, base score is {avg_base}")
-        print(f"your score is: {getGrade(avg_value)}")
-
-        if len(values) == len(inv_values) == len(base_values) == len(t):
-            plt.plot(t,inv_values, linewidth = 1, label = "worst")
-            plt.plot(t,base_values, linewidth = 1, label = "base")
-            plt.plot(t,values, linewidth = 1,label = "best")
-            plt.legend()
-            plt.show()
-        else:
-            print(f"Pyplot lists not matching {len(values)}, {len(inv_values)}, {len(base_values)}, {len(t)}")
-        #PLOT THE VALUES
-    
-    def compare_dances_live(self, timestep: float):
-        self._is_video_being_played = True
-        time_start = time.time()
-        dance_time = self.pattern_dance.get_last_skeleton().timestamp
-
-        values = []
-        inv_values =[]
-        base_values = []
-        t = []
-        t_0 = time_start
-        value_record = []
-
-        while self._is_video_being_played:
-            depth = 0.5
-            n = 10
-            radius = numpy.linspace(0,-depth,n)
-            results = []
-
-            for delay in radius:
-                res = self.alt_compare_recent_dance(delay)
-                if res: 
-                    score,output = res
-                    #print(res)
-                    #results.append(score)
-                    if score != None:
-                        results.append((score,output))
-
-            if not results:
-                print("check2")
-
-            values.append(min(results))
-            inv_values.append(max(results))
-            base_values.append(results[0])
-
-            value_record.append(min(results))
-
-            t.append(self._displayer_timestamp)
-            #print(f"time: {self._displayer_timestamp}, score:{min(results)}, inv_score{max(results)}")
-            #print(f"{self.displayer_timestamp} t_0: {t_0}")
-            if (time.time() - t_0) >= timestep:#when we output the result
-                t_0 = time.time()
-                values = getNthTupleElementFromList(values, 0)
-                avg_value = sum(values)/len(values)
-                #report is what we want the user to see, here we print it
-                report = getGrade(avg_value)
-                print(report)
-
-                values.clear()
-
-
-
-            self._displayer_timestamp = time.time() - time_start
-            if self._displayer_timestamp > dance_time:
-                self._is_video_being_played = False
-            
-        #values is a list of tuples first one being score second one being output
-        #so now since we dont need it we need to strip the second element form the tupels in the list
-        # values = getNthTupleElementFromList(values, 0)
-        # base_values = getNthTupleElementFromList(base_values, 0)
-        # inv_values = getNthTupleElementFromList(inv_values, 0)
-
-        # avg_value = sum(values)/len(values)
-        # inv_avg_value = sum(inv_values)/len(inv_values)
-        # avg_base = sum(base_values)/len(base_values)
-        value_record = getNthTupleElementFromList(values, 0)
-        avg_value_record = sum(value_record)/len(value_record)
-        f_report = getGrade(avg_value_record)
-        return "FINAL RESULT: " + f_report#final result is weird
-
-
-
-    def _compare_recent_dance(self):
-        """
-        Get the comparison of recent dance, based on gathered data from camera and data about dance from viedo.
-        """
-        last_frame = self.actual_dance.get_skeleton_by_timestamp(self.displayer_timestamp)
-        if not last_frame:
-            return
-        pattern_frame = self.pattern_dance.get_skeleton_by_timestamp(last_frame.timestamp)
-
-        for lm in last_frame.landmarks():
-            landmark_id = lm.id
-            patt_lm = pattern_frame.get_landmark_by_id(landmark_id)
-            error = 0
-            if not lm:
-                #Camera could not find a person
-                pass
-            elif not patt_lm:
-                #Person could not be found in reference video
-                pass
-            else:
-                landmark_error = math.sqrt((lm.x - patt_lm.x)**2 + (lm.y - patt_lm.y)**2 + (lm.z - patt_lm.z)**2)
-                error += landmark_error
-
-        print(f"{last_frame.timestamp}: {error}")
-
-    def alt_compare_recent_dance(self, delay) -> float:#delay can be set to account dancers dealy
-        last_frame = self.actual_dance.get_skeleton_by_timestamp(self.displayer_timestamp)  #Returns a Skeleton, which has the biggest timestamp from all Skeletons in this Dance. Returns None if there isn't any Skeleon in this list.
-
-        pattern_frame = self.pattern_dance.get_skeleton_by_timestamp(last_frame.timestamp - delay)#what if timestam is negative?
-
-        if not last_frame or not pattern_frame:# triggers when there is no dance data
-            #print("no last frame or pattern frame")
-            return#returns a none which causes issues in alt_dance_manager
-
-        # if isinstance(EmptySkeleton, )
-        #last_frame is the skeleton of the user
-        #pattern_frame is the skeleton generated form the video for that time instance
-
-        limbs = {#orientation from their perspective
-            #key -> [points, weight(for cumulative error)]
-            "right_arm":  [[14,12,24], 0.7],
-            "right_hand": [[16,12,24], 1],
-            "left_arm":   [[13,11,23], 0.7],
-            "left_hand":  [[15,11,23], 1],
-
-            "right_leg":  [[23,24,26], 0.2],
-            "right_foot": [[23,24,28], 0.2],
-            "left_leg":   [[24,23,25], 0.2],
-            "left_foot":  [[24,23,27], 0.2]
-            }
-
-        #practice error calculation for one limb
-        a_cos, a_sin = last_frame.get_cossin(limbs["right_arm"][0])
-        p_cos, p_sin = pattern_frame.get_cossin(limbs["right_arm"][0])
-        error_rignt_arm = min(abs(a_cos - p_cos), abs(a_sin - p_sin))
-
-        #actual error calculation for all limbs
-        error = 0
-        sum = 0
-        output = ""
-        for limb in limbs:
-            a_cos, a_sin = last_frame.get_cossin(limbs[limb][0])
-            p_cos, p_sin = pattern_frame.get_cossin(limbs[limb][0])
-            #error += min(abs(a_cos - p_cos), abs(a_sin - p_sin)) * limbs[limb][1]
-            angle = abs(math.degrees(math.acos(a_cos) - math.acos(p_cos)))
-            even = " "
-            if angle < 10:
-                even = "  "
-            elif angle >= 100:
-                even = ""
-            output += f"{limb}: {int(angle)}{even} | "
-            error += angle*limbs[limb][1]
-            sum += limbs[limb][1]# update total weight
-        
-        output = f"{int(self.displayer_timestamp*1000)}ms, Res (deg): | {output}"
-        error = error/sum#adjust error for weight
-        #print(a_cos, p_cos)
-        #print(error_rignt_arm)
-        #print(error)
-        return error, output#lets plot it and see if it makes sense
-
 def getNthTupleElementFromList(L: list, n:int):
     #when u have a list of tuples this function will return only the n-th element of each tuple as a list
     R = []
@@ -520,20 +370,249 @@ def getGrade(score: int):
         if score <= limit:
             return result + ", " + str(int((score/180)*100)) + "% pose difference"
     return "ERROR score so terrible it was out of bounds"
-# def dance(data_path, dance_path):
-#     dance = create_dance_from_data_file(data_path)
-#     dance_manager = DanceManager(dance_path, dance)
-#     dance_manager.compare_dances()
-#     dance_manager.save_actual_dance("src/atemp.csv")
 
-# if __name__ == "__main__":
-#     # test = get_dance_data_from_video("src/test (1).mp4")
-#     # write_data_to_csv_file(test, "src/temp.csv")
-#     # dance("src/temp.csv", "src/test (1).mp4")
-#     pd = create_dance_from_data_file("static/pattern.csv")
-#     ad = create_dance_from_data_file("static/actual.csv")
-#     dm = MockDanceManager(pd, ad)
-#     dm.compare_dances()
-#     # d = get_dance_data_from_video("static/d1v3.mp4")
-#     # write_data_to_csv_file(d, "static/actual.csv", SKELETON_FILE)
-#     # pass
+
+# class MockDanceManager(DanceManager):
+#     def __init__(self, pattern_dance: str, actual_dance: Dance) -> None:
+#         """Mock testing class for DanceManager.
+
+#         Args:
+#             pattern_dance (Dance): A Dance class object, which mocks data from video.
+#             actual_dance (Dance): A Dance class object, which mocks data from camera.
+#         """
+
+#         self._dance_video_path = None
+#         self._pattern_dance = pattern_dance
+#         self._actual_dance = actual_dance
+#         self._dance_displayer_thread = None
+#         self._dance_data_getter_thread = None
+#         self._displayer_timestamp = 0
+#         self._is_video_being_played = False
+
+
+
+#     # def compare_dances(self):
+#         #last_frame = self.actual_dance.get_last_skeleton()
+#         # if not last_frame:
+#         #     return
+#         # pattern_frame = self.pattern_dance.get_skeleton_by_timestamp(last_frame.timestamp)
+
+#         # for lm in last_frame.landmarks():
+#         #     landmark_id = lm.id
+#         #     patt_lm = pattern_frame.get_landmark_by_id(landmark_id)
+#         #     error = 0
+#         #     if not lm:
+#         #         #Camera could not find a person
+#         #         pass
+#         #     elif not patt_lm:
+#         #         #Person could not be found in reference video
+#         #         pass
+#         #     else:
+#         #         landmark_error = math.sqrt((lm.x - patt_lm.x)**2 + (lm.y - patt_lm.y)**2 + (lm.z - patt_lm.z)**2)
+#         #         error += landmark_error
+
+#         # print(f"{last_frame.timestamp}: {error}")
+#     #     self._is_video_being_played = True
+#     #     time_start = time.time()
+#     #     dance_time = self.pattern_dance.get_last_skeleton().timestamp
+
+#     #     values = []
+#     #     inv_values =[]
+#     #     base_values = []
+#     #     t = []
+
+#     #     while self._is_video_being_played:
+#     #         depth = 0.5
+#     #         n = 10
+#     #         radius = numpy.linspace(0,-depth,n)
+#     #         results = []
+
+#     #         for delay in radius:
+#     #             res = self.alt_compare_recent_dance(delay)
+#     #             if res:
+#     #                 score,output = res
+#     #                 #print(res)
+#     #                 #results.append(score)
+#     #                 if score != None:
+#     #                     results.append((score,output))
+
+#     #         if not results:
+#     #             print("check2")
+
+#     #         values.append(min(results))
+#     #         inv_values.append(max(results))
+#     #         base_values.append(results[0])
+
+#     #         t.append(self._displayer_timestamp)
+#     #         #print(f"time: {self._displayer_timestamp}, score:{min(results)}, inv_score{max(results)}")
+#     #         self._displayer_timestamp = time.time() - time_start
+#     #         if self._displayer_timestamp > dance_time:
+#     #             self._is_video_being_played = False
+
+#     #     #values is a list of tuples first one being score second one being output
+#     #     #so now since we dont need it we need to strip the second element form the tupels in the list
+#     #     values = getNthTupleElementFromList(values, 0)
+#     #     base_values = getNthTupleElementFromList(base_values, 0)
+#     #     inv_values = getNthTupleElementFromList(inv_values, 0)
+
+#     #     avg_value = sum(values)/len(values)
+#     #     inv_avg_value = sum(inv_values)/len(inv_values)
+#     #     avg_base = sum(base_values)/len(base_values)
+
+#     #     print(f"average score is: {avg_value}, average worst score is: {inv_avg_value}, base score is {avg_base}")
+#     #     print(f"your score is: {getGrade(avg_value)}")
+
+#     #     if len(values) == len(inv_values) == len(base_values) == len(t):
+#     #         plt.plot(t,inv_values, linewidth = 1, label = "worst")
+#     #         plt.plot(t,base_values, linewidth = 1, label = "base")
+#     #         plt.plot(t,values, linewidth = 1,label = "best")
+#     #         plt.legend()
+#     #         plt.show()
+#     #     else:
+#     #         print(f"Pyplot lists not matching {len(values)}, {len(inv_values)}, {len(base_values)}, {len(t)}")
+#     #     #PLOT THE VALUES
+
+#     def compare_dances_live(self, timestep: float):
+#         # self._is_video_being_played = True
+#         # time_start = time.time()
+#         # dance_time = self.pattern_dance.get_last_skeleton().timestamp
+
+#         # values = []
+#         # inv_values =[]
+#         # base_values = []
+#         # t = []
+#         # t_0 = time_start
+#         # value_record = []
+
+#         # while self._is_video_being_played:
+#         #     results = []
+
+#         #     for delay in radius:
+#         #         res = self.alt_compare_recent_dance(delay)
+#         #         if res:
+#         #             score,output = res
+#         #             #print(res)
+#         #             #results.append(score)
+#         #             if score != None:
+#         #                 results.append((score,output))
+
+#         #     if not results:
+#         #         print("check2")
+
+#         #     values.append(min(results))
+#         #     inv_values.append(max(results))
+#         #     base_values.append(results[0])
+
+#         #     t.append(self._displayer_timestamp)
+#         #     #print(f"time: {self._displayer_timestamp}, score:{min(results)}, inv_score{max(results)}")
+#         #     #print(f"{self.displayer_timestamp} t_0: {t_0}")
+#         #     if (time.time() - t_0) >= timestep:#when we output the result
+#         #         t_0 = time.time()
+#         #         values = getNthTupleElementFromList(values, 0)
+#         #         value_record.extend(values)
+#         #         avg_value = sum(values)/len(values)
+#         #         #report is what we want the user to see, here we print it
+#         #         report = getGrade(avg_value)
+#         #         print(report)
+
+#         #         values.clear()
+
+
+
+#         #     self._displayer_timestamp = time.time() - time_start
+#         #     if self._displayer_timestamp > dance_time:
+#         #         self._is_video_being_played = False
+
+#         #values is a list of tuples first one being score second one being output
+#         #so now since we dont need it we need to strip the second element form the tupels in the list
+#         # values = getNthTupleElementFromList(values, 0)
+#         # base_values = getNthTupleElementFromList(base_values, 0)
+#         # inv_values = getNthTupleElementFromList(inv_values, 0)
+
+#         # avg_value = sum(values)/len(values)
+#         # inv_avg_value = sum(inv_values)/len(inv_values)
+#         # avg_base = sum(base_values)/len(base_values)
+#         return
+
+
+
+#     # def _compare_recent_dance(self):
+#     #     """
+#     #     Get the comparison of recent dance, based on gathered data from camera and data about dance from viedo.
+#     #     """
+#     #     last_frame = self.actual_dance.get_skeleton_by_timestamp(self.displayer_timestamp)
+#     #     if not last_frame:
+#     #         return
+#     #     pattern_frame = self.pattern_dance.get_skeleton_by_timestamp(last_frame.timestamp)
+
+#     #     for lm in last_frame.landmarks():
+#     #         landmark_id = lm.id
+#     #         patt_lm = pattern_frame.get_landmark_by_id(landmark_id)
+#     #         error = 0
+#     #         if not lm:
+#     #             #Camera could not find a person
+#     #             pass
+#     #         elif not patt_lm:
+#     #             #Person could not be found in reference video
+#     #             pass
+#     #         else:
+#     #             landmark_error = math.sqrt((lm.x - patt_lm.x)**2 + (lm.y - patt_lm.y)**2 + (lm.z - patt_lm.z)**2)
+#     #             error += landmark_error
+
+#     #     print(f"{last_frame.timestamp}: {error}")
+
+#     def alt_compare_recent_dance(self, delay) -> float:#delay can be set to account dancers dealy
+#         last_frame = self.actual_dance.get_skeleton_by_timestamp(self.displayer_timestamp)  #Returns a Skeleton, which has the biggest timestamp from all Skeletons in this Dance. Returns None if there isn't any Skeleon in this list.
+
+#         pattern_frame = self.pattern_dance.get_skeleton_by_timestamp(last_frame.timestamp - delay)#what if timestam is negative?
+
+#         if not last_frame or not pattern_frame:# triggers when there is no dance data
+#             #print("no last frame or pattern frame")
+#             return#returns a none which causes issues in alt_dance_manager
+
+#         # if isinstance(EmptySkeleton, )
+#         #last_frame is the skeleton of the user
+#         #pattern_frame is the skeleton generated form the video for that time instance
+
+#         limbs = {#orientation from their perspective
+#             #key -> [points, weight(for cumulative error)]
+#             "right_arm":  [[14,12,24], 0.7],
+#             "right_hand": [[16,12,24], 1],
+#             "left_arm":   [[13,11,23], 0.7],
+#             "left_hand":  [[15,11,23], 1],
+
+#             "right_leg":  [[23,24,26], 0.2],
+#             "right_foot": [[23,24,28], 0.2],
+#             "left_leg":   [[24,23,25], 0.2],
+#             "left_foot":  [[24,23,27], 0.2]
+#             }
+
+#         #practice error calculation for one limb
+#         a_cos, a_sin = last_frame.get_cossin(limbs["right_arm"][0])
+#         p_cos, p_sin = pattern_frame.get_cossin(limbs["right_arm"][0])
+#         error_rignt_arm = min(abs(a_cos - p_cos), abs(a_sin - p_sin))
+
+#         #actual error calculation for all limbs
+#         error = 0
+#         sum = 0
+#         output = ""
+#         for limb in limbs:
+#             a_cos, a_sin = last_frame.get_cossin(limbs[limb][0])
+#             p_cos, p_sin = pattern_frame.get_cossin(limbs[limb][0])
+#             #error += min(abs(a_cos - p_cos), abs(a_sin - p_sin)) * limbs[limb][1]
+#             angle = abs(math.degrees(math.acos(a_cos) - math.acos(p_cos)))
+#             even = " "
+#             if angle < 10:
+#                 even = "  "
+#             elif angle >= 100:
+#                 even = ""
+#             output += f"{limb}: {int(angle)}{even} | "
+#             error += angle*limbs[limb][1]
+#             sum += limbs[limb][1]# update total weight
+
+#         output = f"{int(self.displayer_timestamp*1000)}ms, Res (deg): | {output}"
+#         error = error/sum#adjust error for weight
+#         #print(a_cos, p_cos)
+#         #print(error_rignt_arm)
+#         #print(error)
+#         return error, output#lets plot it and see if it makes sense

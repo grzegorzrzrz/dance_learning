@@ -4,6 +4,7 @@ MODEL_PATH = "src/pose_landmarker_heavy.task"
 SKELETON_FILE = "src/skeleton.csv"
 DEFAULT_PROJECTION = "2D"
 DEFAULT_CHECKING_CAMERA_TIME = 3
+DEFAULT_SCORING_TIMESTEP = 3
 
 DANCE_VIDEOS_PATH = "static/data/dance_videos"
 PATTERN_DANCE_DATA_PATH = "static/data/pattern_dance_data"
