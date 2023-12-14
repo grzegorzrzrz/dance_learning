@@ -65,11 +65,12 @@
     <div class="finishing-screen" id="finishing-screen" style="display: none;
     flex-direction: column; justify-content: center;">
         <h1>Dance Results</h1>
-        <h2 id="congratulatory-message"></h1><br>
-        <h2>Your dance performance: <span id="percent">0</span>%</h1><br>
-        <h3>Number of Good Moves: <span id="good-moves">0</span></h2>
-        <h3>Number of Excellent Moves: <span id="excellent-moves">0</span></h2>
-        <h3>Number of Bad Moves: <span id="bad-moves">0</span></h2>
+        <h2 id="congratulatory-message"></h2><br>
+        <h2>Your dance performance: <span id="percent">0</span>%</h2><br>
+        <h3>Number of Excellent Moves: <span id="excellent-moves">0</span></h3>
+        <h3>Number of Good Moves: <span id="good-moves">0</span></h3>
+        <h3>Number of Ok Moves: <span id="ok-moves">0</span></h3>
+        <h3>Number of Bad Moves: <span id="bad-moves">0</span></h3>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
@@ -81,6 +82,13 @@
         const eventSource = new EventSource('/point_stream');
         const clickedItem = localStorage.getItem('clickedItem');
         const movePrompt = document.getElementById('indicator');
+        const score = [];
+
+        eventSource.onmessage = function(event) {
+            score.push(event.data);
+        console.log(event.data);
+        updateIndicator(event.data);
+    };
 
 function showMovePrompt(message) {
   movePrompt.textContent = message;
@@ -135,18 +143,8 @@ if (clickedItem) {
         let goodMoves = 0;
         let excellentMoves = 0;
         let badMoves = 0;
+        let okMoves = 0;
 
-        eventSource.onmessage = function(event) {
-        // Update the message on the HTML page
-        console.log(event.data);
-        updateIndicator(event.data);
-    };
-
-        eventSource.onerror = function(event) {
-        // Handle errors
-        console.error("Error with SSE:", event);
-        eventSource.close();
-    };
 
 
 
@@ -167,21 +165,23 @@ if (clickedItem) {
     });
 
         function updateIndicator(moveQuality) {
-            if (moveQuality === 'good') {
-                goodMoves++;
-                // Example usage:
-showMovePrompt('Good!');
-moveColorUp();
-            } else if (moveQuality === 'excellent') {
+            if (moveQuality <= 10) {
                 excellentMoves++;
                 // Example usage:
-showMovePrompt('Excellent!');
-moveColorUp();
-            } else if (moveQuality === 'bad') {
-                badMoves++;
+            showMovePrompt('Excellent!');
+            moveColorUp();
+            } else if (moveQuality <= 30) {
+                goodMoves++;
+                // Example usage:
+                showMovePrompt('Good!');
                 moveColorUp();
-showMovePrompt('Ok!');
+            } else if (moveQuality <= 50) {
+                okMoves++;
+                showMovePrompt('Ok!');
             } else {
+                badMoves++;
+                showMovePrompt('Try harder!');
+                moveColorDown();
             }
 /*
             // Trigger the fade-out effect
@@ -214,10 +214,14 @@ showMovePrompt('Ok!');
             document.getElementById('good-moves').textContent = goodMoves;
             document.getElementById('excellent-moves').textContent = excellentMoves;
             document.getElementById('bad-moves').textContent = badMoves;
+            document.getElementById('ok-moves').textContent = okMoves;
 
-            // Assume you have a variable 'performancePercent' representing the user's dance performance percentage.
-const performancePercent = 75;
-            // Update the performance percentage text.
+
+    const totalMoves = excellentMoves + goodMoves + okMoves + badMoves;
+    const maxPerformance = 4;
+    const performance = ((excellentMoves * 4 + goodMoves * 3 + okMoves * 2) / totalMoves);
+    const performancePercent = ((performance / maxPerformance) * 100).toFixed(2);
+
             const percentText = document.getElementById('percent');
 percentText.textContent = performancePercent;
 

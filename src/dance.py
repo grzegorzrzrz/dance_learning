@@ -12,6 +12,8 @@ import numpy
 import matplotlib.pyplot as plt
 import os
 
+sse_messages = []
+
 class Dance:
     def __init__(self, skeleton_table: List[Skeleton], name="") -> None:
         """A class which represents a dance, as a list of Skeletons created in time.
@@ -136,6 +138,7 @@ class DanceManager:
                        save_actual_dance = True, dimension = DEFAULT_PROJECTION):
         """A method, which continuously compares dances while viedo is being played.
         """
+        global sse_messages
 
         self._dance_data_path = dance_data_path
         self._pattern_dance = create_dance_from_data_file(dance_data_path)
@@ -191,6 +194,7 @@ class DanceManager:
                 avg_value = sum(values)/len(values)
                 # report is what we want the user to see, here we print it
                 # report = getGrade(avg_value)
+                sse_messages.append(avg_value)
                 # print(report)
 
                 values.clear()

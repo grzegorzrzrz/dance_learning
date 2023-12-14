@@ -1,15 +1,17 @@
-from flask import Flask, Response, render_template, request, jsonify, stream_with_context, send_from_directory
+from flask import Flask, Response, render_template, request, jsonify, send_from_directory
 import cv2
 import random, time
 import sys
 sys.path.append("src")
-from src.dance import DanceManager
+from src.dance import DanceManager, sse_messages
 app = Flask(__name__)
 
 pattern_dance_path = None
 video_capture = cv2.VideoCapture(0)  # 0 for default camera (you can specify other camera indexes or video files)
 
 dance_manager = DanceManager(video_capture)
+
+message_time = 3
 
 def generate_frames():
     while True:
@@ -63,18 +65,15 @@ def get_dance_name():
     return jsonify(success=True)
 
 
-
-def generate_messages():
-    for _ in range (7):
-        # Send the current message to the client
-        yield f"data: {random.choice(['good', 'bad', 'excellent'])}\n\n"
-        time.sleep(5)
-        # Sleep for 5 seconds
-
 @app.route('/point_stream')
-def stream():
-    # Use the SSE MIME type
-    return Response(generate_messages(), content_type='text/event-stream')
+def sse_stream():
+    def generate():
+        while True:
+            if sse_messages:
+                yield f"data: {sse_messages.pop(0)}\n\n"
+            time.sleep(3)
+
+    return Response(generate(), content_type='text/event-stream')
 
 @app.route('/webcam_stream')
 def video_feed():
