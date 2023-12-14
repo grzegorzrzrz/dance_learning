@@ -380,13 +380,14 @@ class MockDanceManager(DanceManager):
             inv_values.append(max(results))
             base_values.append(results[0])
 
+            value_record.append(min(results))
+
             t.append(self._displayer_timestamp)
             #print(f"time: {self._displayer_timestamp}, score:{min(results)}, inv_score{max(results)}")
             #print(f"{self.displayer_timestamp} t_0: {t_0}")
             if (time.time() - t_0) >= timestep:#when we output the result
                 t_0 = time.time()
                 values = getNthTupleElementFromList(values, 0)
-                value_record.extend(values)
                 avg_value = sum(values)/len(values)
                 #report is what we want the user to see, here we print it
                 report = getGrade(avg_value)
@@ -409,7 +410,10 @@ class MockDanceManager(DanceManager):
         # avg_value = sum(values)/len(values)
         # inv_avg_value = sum(inv_values)/len(inv_values)
         # avg_base = sum(base_values)/len(base_values)
-        return
+        value_record = getNthTupleElementFromList(values, 0)
+        avg_value_record = sum(value_record)/len(value_record)
+        f_report = getGrade(avg_value_record)
+        return "FINAL RESULT: " + f_report#final result is weird
 
 
 
