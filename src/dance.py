@@ -179,7 +179,7 @@ class DanceManager:
 
             # if not results:
             #     print("check2")
-
+            results = getNthTupleElementFromList(results, 0)#strip the second elements of tuples from the list (output)
             values.append(min(results))
             inv_values.append(max(results))
             base_values.append(results[0])
@@ -190,7 +190,7 @@ class DanceManager:
             if (time.time() - t_0) >= timestep:#when we output the result
                 t_0 = time.time()
                 values = getNthTupleElementFromList(values, 0)
-                value_record.extend(values)
+                # value_record.extend(values)
                 avg_value = sum(values)/len(values)
                 # report is what we want the user to see, here we print it
                 # report = getGrade(avg_value)
