@@ -1,6 +1,8 @@
 import cv2
 import mediapipe as mp
+from mediapipe.framework.formats import landmark_pb2
 import time
+import numpy as np
 from constants import LEFT_ANCHOR_CREATOR_NODE, RIGHT_ANCHOR_CREATOR_NODE, SKELETON_FILE, DEFAULT_PROJECTION, MODEL_PATH
 from skeleton import *
 
@@ -49,30 +51,48 @@ def create_skeleton_from_raw_pose_landmarks(pose_landmarks, timestamp, dimension
 
     return frame_skeleton
 
+def draw_landmarks_on_image(rgb_image, detection_result):
+    pose_landmarks_list = detection_result.pose_landmarks
+    annotated_image = np.copy(rgb_image)
+
+    # Loop through the detected poses to visualize.
+    for idx in range(len(pose_landmarks_list)):
+      pose_landmarks = pose_landmarks_list[idx]
+
+      # Draw the pose landmarks.
+      pose_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
+      pose_landmarks_proto.landmark.extend([
+        landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z) for landmark in pose_landmarks
+      ])
+      mp.solutions.drawing_utils.draw_landmarks(
+        annotated_image,
+        pose_landmarks_proto,
+        mp.solutions.pose.POSE_CONNECTIONS,
+        mp.solutions.drawing_styles.get_default_pose_landmarks_style())
+    return annotated_image
 
 def show_video_with_estimation(path):
     cap = cv2.VideoCapture(path)
+    cam = cv2.VideoCapture(0)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frame_time_ms = int(1000/fps)
     while True:
         success, img = cap.read()
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        results = landmarker.detect(imgRGB)
-        print(results.pose_landmarks)
-        if results.pose_landmarks:
-            # mpDraw.draw_landmarks(img, results.pose_landmarks, mpPose.POSE_CONNECTIONS)
-            for id, lm in enumerate(results.pose_landmarks.landmark):
-                h, w,c = img.shape
-                print(id, lm)
-                cx, cy = int(lm.x*w), int(lm.y*h)
-                cv2.circle(img, (cx, cy), 5, (255,0,0), cv2.FILLED)
-
-        cTime = time.time()
-        fps = 1/(cTime-pTime)
-        pTime = cTime
-
-        cv2.putText(img, str(int(fps)), (50,50), cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0), 3)
-        cv2.imshow("Image", img)
-        cv2.waitKey(1)
-
+        result = estaminate_from_frame(imgRGB)
+        # annotated_image = imgRGB
+        annotated_image = draw_landmarks_on_image(imgRGB, result)
+        cv2.imshow("Actual", cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
+        # time.sleep(1/fps)
+        success, img = cam.read()
+        imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        result = estaminate_from_frame(imgRGB)
+        # annotated_image = imgRGB
+        annotated_image = draw_landmarks_on_image(imgRGB, result)
+        cv2.imshow("Pattern", cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
+        # time.sleep(1/fps)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
 def get_pose_data_from_single_frame():
 
