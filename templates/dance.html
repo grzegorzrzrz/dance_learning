@@ -5,6 +5,14 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='background.css') }}">
     <style>
+        video {
+      border-radius: 10px;
+    }
+
+    /* Apply rounded corners to the image element */
+    img {
+      border-radius: 10px;
+    }
     #menu-button {
         z-index: 3;
     }
@@ -208,6 +216,7 @@ if (clickedItem) {
             const finishingScreen = document.getElementById('finishing-screen');
             finishingScreen.style.display = 'flex';
             imgElement.style.display = "none";
+            movePrompt.style.display = "none";
 
 
             // Display move statistics
@@ -219,9 +228,14 @@ if (clickedItem) {
 
     const totalMoves = excellentMoves + goodMoves + okMoves + badMoves;
     const maxPerformance = 4;
+    let performancePercent;
+    if (totalMoves === 0){
+        performancePercent = 0;
+    }
+    else {
     const performance = ((excellentMoves * 4 + goodMoves * 3 + okMoves * 2) / totalMoves);
-    const performancePercent = ((performance / maxPerformance) * 100).toFixed(2);
-
+    performancePercent = ((performance / maxPerformance) * 100).toFixed(0);
+    }
             const percentText = document.getElementById('percent');
 percentText.textContent = performancePercent;
 

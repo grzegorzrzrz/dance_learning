@@ -17,8 +17,8 @@
 /* Position the webcam video in the top-right corner */
 #webcam_stream {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: 1%;
+    right: 0.5%;
     z-index: 2; /* Set z-index to 2 to ensure it's above the dance video */
 }
 

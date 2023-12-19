@@ -6,6 +6,14 @@
     <title>Dance Learning Application</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='background.css') }}">
     <style>
+        video {
+      border-radius: 10px !important;
+    }
+
+    /* Apply rounded corners to the image element */
+    img {
+      border-radius: 10px;
+    }
         body {
             display: flex;
             flex-direction: column;
@@ -25,7 +33,7 @@
         }
 
         .miniature {
-            margin: 0 20px;
+            margin: 0 10px;
             cursor: pointer;
             transition: transform 0.3s;
             position: relative;
@@ -49,7 +57,7 @@
             display: none;
             transform: translateZ(20px); /* Move the video slightly forward for depth */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Add shadow background */
-            border-radius: 10px; /* Optional: Add rounded corners */
+
         }
 
         .miniature:hover video {
@@ -73,46 +81,50 @@
     <div class="miniature-container">
         <span id="dance_1" onclick="transitionToPage('/calibrate')">
             <div class="miniature" onmouseover="startVideo('video1');" onmouseout="stopVideo('video1')">
-                <video id="video1" width="360">
+                <div class="video-mask">
+                <video id="video1" width="360" style="border-radius: 10px;">
                     <source src="{{ url_for('static', filename='/data/dance_videos/dance_1.mp4') }}" type="video/mp4">
                     Your browser does not support the video tag.
-                </video>
+                </video></div>
                 <img src="{{ url_for('static', filename='/data/dance_videos/dance_preview_1.png') }}" width="360" alt="Dance 1">
-                <p class="miniature-title">Dance 1</p>
+                <p class="miniature-title">Oops!…I Did It Again - Britney Spears</p>
             </div>
         </span>
 
 
         <span id="dance_2" onclick="transitionToPage('/calibrate')">
             <div class="miniature" onmouseover="startVideo('video2');" onmouseout="stopVideo('video2')">
+                <div class="video-mask">
                 <video id="video2" width="360">
                     <source src="{{ url_for('static', filename='/data/dance_videos/dance_2.mp4') }}" type="video/mp4">
                     Your browser does not support the video tag.
-                </video>
+                </video></div>
                 <img src="{{ url_for('static', filename='/data/dance_videos/dance_preview_2.png') }}" width="360" alt="Dance 2">
-                <p class="miniature-title">Dance 2</p>
+                <p class="miniature-title">Take You Dancing - Jason Derulo</p>
             </div>
         </span>
 
         <span id="dance_3" onclick="transitionToPage('/calibrate')">
             <div class="miniature" onmouseover="startVideo('video3');" onmouseout="stopVideo('video3')">
+                <div class="video-mask">
                 <video id="video3" width="360">
                     <source src="{{ url_for('static', filename='/data/dance_videos/dance_3.mp4') }}" type="video/mp4">
                     Your browser does not support the video tag.
-                </video>
+                </video></div>
                 <img src="{{ url_for('static', filename='/data/dance_videos/dance_preview_3.png') }}" width="360" alt="Dance 3">
-                <p class="miniature-title">Dance 3</p>
+                <p class="miniature-title">Scream - Usher</p>
             </div>
         </span>
 
         <span id="dance_4" onclick="transitionToPage('/calibrate')">
             <div class="miniature" onmouseover="startVideo('video4');" onmouseout="stopVideo('video4')">
+                <div class="video-mask">
                 <video id="video4" width="360">
                     <source src="{{ url_for('static', filename='/data/dance_videos/dance_4.mp4') }}" type="video/mp4">
                     Your browser does not support the video tag.
-                </video>
+                </video></div>
                 <img src="{{ url_for('static', filename='/data/dance_videos/dance_preview_4.png') }}" width="360" alt="Dance 4">
-                <p class="miniature-title">Dance 4</p>
+                <p class="miniature-title">Goo Goo Muck - The Cramps</p>
             </div>
         </span>
     </div>

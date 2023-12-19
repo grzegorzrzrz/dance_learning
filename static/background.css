@@ -80,3 +80,8 @@ h2 {
     height: 40px;
     cursor: pointer;
 }
+.video-mask{
+    width: 350px;
+    border-radius: 10px;
+    overflow: hidden;
+}
